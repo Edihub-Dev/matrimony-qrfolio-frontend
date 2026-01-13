@@ -1,5 +1,6 @@
 import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
+import axios from "axios";
 import App from "./App.tsx";
 import "./index.css";
 import MatrimonialProfilePage from "./pages/MatrimonialProfilePage";
@@ -16,6 +17,13 @@ import NotificationsPage from "./pages/NotificationsPage";
 import { PaymentCallback } from "./components/PaymentCallback";
 import { AuthProvider } from "./context/AuthContext";
 import { RealtimeToast } from "./components/RealtimeToast";
+
+const MATRIMONY_API_BASE_URL: string | undefined = (import.meta as any)?.env
+  ?.VITE_MATRIMONY_API_BASE_URL;
+
+if (MATRIMONY_API_BASE_URL) {
+  axios.defaults.baseURL = String(MATRIMONY_API_BASE_URL).replace(/\/$/, "");
+}
 
 const getRootComponent = () => {
   if (typeof window === "undefined") {

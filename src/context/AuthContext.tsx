@@ -24,7 +24,7 @@ export type DeleteMatrimonialImageResult = {
 
 export type AuthContextValue = {
   uploadMatrimonialImage: (
-    formData: FormData,
+    formData: FormData
   ) => Promise<UploadMatrimonialImageResult>;
   deleteMatrimonialImage: (options: {
     storageKey: string;
@@ -51,7 +51,7 @@ const realValue: AuthContextValue = {
             ...getAuthHeaders(),
             "Content-Type": "multipart/form-data",
           },
-        },
+        }
       );
 
       const data = response.data || {};
@@ -87,7 +87,7 @@ const realValue: AuthContextValue = {
             ...getAuthHeaders(),
             "Content-Type": "application/json",
           },
-        },
+        }
       );
 
       const data = response.data || {};

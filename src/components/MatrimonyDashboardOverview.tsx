@@ -503,16 +503,16 @@ export const MatrimonyDashboardOverview: React.FC<Props> = ({
     return (
       <div
         key={key}
-        className="flex items-center gap-2 rounded-2xl bg-white border border-[#f2e6ea] px-3 py-2 shadow-sm transition transform hover:-translate-y-0.5 hover:shadow-md hover:border-[#e8d6dc]"
+        className="flex items-center gap-3 rounded-xl bg-white border border-rose-100 px-4 py-3 shadow-sm"
       >
-        <div className="h-7 w-7 rounded-full bg-[#fffafb] flex items-center justify-center border border-[#f2e6ea]">
-          {icon || <Sparkles className="w-3 h-3 text-[#f07f9c]" />}
+        <div className="h-9 w-9 rounded-full bg-rose-100 flex items-center justify-center text-rose-600 shrink-0">
+          {icon || <Sparkles className="w-4 h-4" />}
         </div>
         <div className="flex flex-col">
-          <span className="text-[10px] font-semibold tracking-wide text-gray-500 uppercase">
+          <span className="text-[10px] font-semibold tracking-[0.18em] text-rose-400 uppercase">
             {label}
           </span>
-          <span className="text-[11px] font-medium text-[#2e1d22]">
+          <span className="text-[13px] font-medium text-rose-900">
             {display}
           </span>
         </div>
@@ -868,20 +868,16 @@ export const MatrimonyDashboardOverview: React.FC<Props> = ({
         </div>
       </div>
       {showAboutSection && (
-        <div className="rounded-2xl border border-[#f2e6ea] bg-white p-5 shadow-sm">
-          <div className="flex items-center gap-2 mb-2">
-            <div className="h-9 w-9 rounded-full bg-[#fffafb] border border-[#f2e6ea] flex items-center justify-center">
-              <User className="w-4 h-4 text-[#f07f9c]" />
-            </div>
-            <p className="text-sm font-bold text-[#2e1d22]">About</p>
-          </div>
-          <div className="space-y-2 text-xs text-[#2e1d22]">
-            <div>
-              <div className="rounded-xl border border-[#f2e6ea] bg-[#fffafb] px-4 py-3 min-h-[72px] flex items-start">
-                <p className="text-xs text-[#2e1d22] whitespace-pre-line">
-                  {about.summary}
-                </p>
-              </div>
+        <div className="rounded-2xl bg-white shadow-sm border border-rose-100 overflow-hidden">
+          <div className="h-[3px] w-full bg-gradient-to-r from-[#ff4f7a] via-[#ff9aa6] to-[#ffb35a]" />
+          <div className="px-6 py-6">
+            <p className="text-center text-sm font-semibold italic text-[#e11d48]">
+              About me
+            </p>
+            <div className="mt-4 min-h-[70px] flex items-center justify-center px-4">
+              <p className="text-center text-sm text-[#3b2430] whitespace-pre-line">
+                {about.summary}
+              </p>
             </div>
           </div>
         </div>
@@ -889,369 +885,368 @@ export const MatrimonyDashboardOverview: React.FC<Props> = ({
 
       <div className="space-y-5">
         {showBasicSection && (
-          <div className="rounded-2xl border border-[#f2e6ea] bg-white p-5 shadow-sm">
-            <div className="flex items-center justify-between mb-2">
-              <div className="flex items-center gap-2">
-                <div className="h-9 w-9 rounded-full bg-[#fffafb] border border-[#f2e6ea] flex items-center justify-center">
-                  <User2 className="w-4 h-4 text-[#f07f9c]" />
-                </div>
-                <p className="text-xs font-semibold text-gray-600">
-                  Basic Details
-                </p>
+          <div className="rounded-lg bg-white px-5 py-5 sm:px-6 sm:py-6 shadow-sm border border-rose-100">
+            <div className="flex items-center gap-2 mb-4 -mx-5 -mt-6 -ml-6 -mr-6 px-5 py-3 rounded-lg bg-[#ffeef3] border-b border-rose-100">
+              <div className="h-7 w-7 rounded-full bg-rose-100 flex items-center justify-center">
+                <User2 className="w-3.5 h-3.5 text-rose-600" />
               </div>
-              {/* {age && (
-              <span className="text-[11px] font-medium text-gray-600 bg-rose-50 px-2 py-0.5 rounded-full">
-                {age} yrs
-              </span>
-            )} */}
+              <p className="text-sm font-semibold text-rose-900">
+                Basic Details
+              </p>
             </div>
-            <div className="grid gap-3 sm:grid-cols-3">
+            <div className="grid gap-3 sm:grid-cols-2">
               {renderFieldTile(
                 "Full name",
                 displayName,
-                <User className="w-3 h-3 text-rose-500" />
+                <User className="w-4 h-4" />
               )}
               {renderFieldTile(
                 "Date of birth",
                 formatDateOnly((basic as any).birthDate) as string | undefined,
-                <Calendar1 className="w-3 h-3 text-rose-500" />
+                <Calendar1 className="w-4 h-4" />
               )}
               {renderFieldTile(
                 "Age",
                 age ? `${age} yrs` : "",
-                <Users className="w-3 h-3 text-rose-500" />
+                <Users className="w-4 h-4" />
               )}
               {renderFieldTile(
                 "Profile created by",
                 (about as any).profileCreatedBy as string | undefined,
-                <UserIcon className="w-3 h-3 text-rose-500" />
+                <UserIcon className="w-4 h-4" />
               )}
               {renderFieldTile(
                 "Marital status",
                 basic.maritalStatus,
-                <Handshake className="w-3 h-3 text-rose-500" />
+                <Handshake className="w-4 h-4" />
               )}
               {renderFieldTile(
                 "Gender",
                 basic.gender as string | undefined,
-                <Users className="w-3 h-3 text-rose-500" />
+                <Users className="w-4 h-4" />
               )}
             </div>
           </div>
         )}
 
         {showPhysicalSection && (
-          <div className="rounded-2xl border border-[#f2e6ea] bg-white p-5 shadow-sm">
-            <div className="flex items-center gap-2 mb-2">
-              <div className="h-9 w-9 rounded-full bg-[#fffafb] border border-[#f2e6ea] flex items-center justify-center">
-                <Ruler className="w-4 h-4 text-[#f07f9c]" />
+          <div className="rounded-lg bg-white px-5 py-5 sm:px-6 sm:py-6 shadow-sm border border-rose-100">
+            <div className="flex items-center gap-2 mb-4 -mx-5 -mt-6 -ml-6 -mr-6 px-5 py-3 rounded-lg bg-[#ffeef3] border-b border-rose-100">
+              <div className="h-7 w-7 rounded-full bg-rose-100 flex items-center justify-center">
+                <Ruler className="w-3.5 h-3.5 text-rose-600" />
               </div>
-              <p className="text-xs font-semibold text-gray-600">
+              <p className="text-sm font-semibold text-rose-900">
                 Physical Information
               </p>
             </div>
-            <div className="grid gap-3 sm:grid-cols-3">
+            <div className="grid gap-3 sm:grid-cols-2">
               {renderFieldTile(
                 "Height",
                 basic.height,
-                <Ruler className="w-3 h-3 text-rose-500" />
+                <Ruler className="h-4 w-4" />
               )}
               {renderFieldTile(
                 "Weight",
                 (basic as any).weight as string | undefined,
-                <Weight className="w-3 h-3 text-rose-500" />
+                <Weight className="h-4 w-4" />
               )}
               {renderFieldTile(
                 "Body type",
                 (basic as any).bodyType as string | undefined,
-                <Footprints className="w-3 h-3 text-rose-500" />
+                <Footprints className="h-4 w-4" />
               )}
               {renderFieldTile(
                 "Complexion",
                 (basic as any).complexion as string | undefined,
-                <Palette className="w-3 h-3 text-rose-500" />
+                <Palette className="h-4 w-4" />
               )}
               {renderFieldTile(
                 "Blood group",
                 (basic as any).bloodGroup as string | undefined,
-                <Syringe className="w-3 h-3 text-rose-500" />
+                <Syringe className="h-4 w-4" />
               )}
               {renderFieldTile(
                 "Physical status",
                 basic.physicalStatus,
-                <ClipboardList className="w-3 h-3 text-rose-500" />
+                <ClipboardList className="h-4 w-4" />
               )}
             </div>
           </div>
         )}
 
         {showEducationSection && (
-          <div className="rounded-2xl border border-[#f2e6ea] bg-white p-5 shadow-sm">
-            <div className="flex items-center gap-2 mb-2">
-              <div className="h-9 w-9 rounded-full bg-[#fffafb] border border-[#f2e6ea] flex items-center justify-center">
-                <School className="w-4 h-4 text-[#f07f9c]" />
+          <div className="rounded-lg bg-white px-5 py-5 sm:px-6 sm:py-6 shadow-sm border border-rose-100">
+            <div className="flex items-center gap-2 mb-4 -mx-5 -mt-6 -ml-6 -mr-6 px-5 py-3 rounded-lg bg-[#ffeef3] border-b border-rose-100">
+              <div className="h-7 w-7 rounded-full bg-rose-100 flex items-center justify-center">
+                <School className="w-3.5 h-3.5 text-rose-600" />
               </div>
-              <p className="text-xs font-semibold text-gray-600">
+              <p className="text-sm font-semibold text-rose-900">
                 Education Details
               </p>
             </div>
-            <div className="grid gap-2 text-xs text-amber-900 sm:grid-cols-2">
+            <div className="grid gap-3 sm:grid-cols-2">
               {renderFieldTile(
                 "Highest Education",
                 education.description as string | undefined,
-                <Laptop className="w-3 h-3 text-rose-500" />
+                <Laptop className="h-4 w-4" />
               )}
               {renderFieldTile(
                 "Level",
                 education.level,
-                <GraduationCap className="w-3 h-3 text-rose-500" />
+                <GraduationCap className="h-4 w-4" />
               )}
               {renderFieldTile(
                 "Degree",
                 education.degree,
-                <GraduationCap className="w-3 h-3 text-rose-500" />
+                <GraduationCap className="h-4 w-4" />
               )}
               {renderFieldTile(
                 "Field",
                 education.field,
-                <Laptop className="w-3 h-3 text-rose-500" />
+                <Laptop className="h-4 w-4" />
               )}
               {renderFieldTile(
                 "College",
                 education.college,
-                <Building2 className="w-3 h-3 text-rose-500" />
+                <Building2 className="h-4 w-4" />
               )}
               {renderFieldTile(
                 "Year",
                 education.year,
-                <Calendar className="w-3 h-3 text-rose-500" />
+                <Calendar className="h-4 w-4" />
               )}
             </div>
           </div>
         )}
 
         {showProfessionalSection && (
-          <div className="rounded-2xl border border-[#f2e6ea] bg-white p-5 shadow-sm">
-            <div className="flex items-center gap-2 mb-2">
-              <div className="h-9 w-9 rounded-full bg-[#fffafb] border border-[#f2e6ea] flex items-center justify-center">
-                <Briefcase className="w-4 h-4 text-[#f07f9c]" />
+          <div className="rounded-lg bg-white px-5 py-5 sm:px-6 sm:py-6 shadow-sm border border-rose-100">
+            <div className="flex items-center gap-2 mb-4 -mx-5 -mt-6 -ml-6 -mr-6 px-5 py-3 rounded-lg bg-[#ffeef3] border-b border-rose-100">
+              <div className="h-7 w-7 rounded-full bg-rose-100 flex items-center justify-center">
+                <Briefcase className="w-3.5 h-3.5 text-rose-600" />
               </div>
-              <p className="text-xs font-semibold text-gray-600">
+              <p className="text-sm font-semibold text-rose-900">
                 Professional Details
               </p>
             </div>
-            <div className="grid gap-2 text-xs text-amber-900 sm:grid-cols-2">
+            <div className="grid gap-3 sm:grid-cols-2">
               {renderFieldTile(
                 "Occupation",
                 career.role,
-                <TrendingUp className="w-3 h-3 text-rose-500" />
+                <TrendingUp className="h-4 w-4" />
               )}
               {renderFieldTile(
                 "Company",
                 (career as any).company,
-                <Building className="w-3 h-3 text-rose-500" />
+                <Building className="h-4 w-4" />
               )}
               {renderFieldTile(
                 "Employed in",
                 ((career as any).industry || (career as any).employedIn) as
                   | string
                   | undefined,
-                <Building2 className="w-3 h-3 text-rose-500" />
+                <Building2 className="h-4 w-4" />
               )}
               {renderFieldTile(
                 "Annual income",
                 basic.annualIncome as string | undefined,
-                <IndianRupee className="w-3 h-3 text-rose-500" />
+                <IndianRupee className="h-4 w-4" />
               )}
               {renderFieldTile(
                 "Work location",
                 career.location,
-                <MapPin className="w-3 h-3 text-rose-500" />
+                <MapPin className="h-4 w-4" />
               )}
             </div>
           </div>
         )}
 
         {showLifestyleSection && (
-          <div className="rounded-2xl border border-[#f2e6ea] bg-white p-5 shadow-sm">
-            <div className="flex items-center gap-2 mb-2">
-              <div className="h-9 w-9 rounded-full bg-[#fffafb] border border-[#f2e6ea] flex items-center justify-center">
-                <Film className="w-4 h-4 text-[#f07f9c]" />
+          <div className="rounded-lg bg-white px-5 py-5 sm:px-6 sm:py-6 shadow-sm border border-rose-100">
+            <div className="flex items-center gap-2 mb-4 -mx-5 -mt-6 -ml-6 -mr-6 px-5 py-3 rounded-lg bg-[#ffeef3] border-b border-rose-100">
+              <div className="h-7 w-7 rounded-full bg-rose-100 flex items-center justify-center">
+                <Film className="w-3.5 h-3.5 text-rose-600" />
               </div>
-              <p className="text-xs font-semibold text-gray-600">
+              <p className="text-sm font-semibold text-rose-900">
                 Lifestyle & Favourites
               </p>
             </div>
-            <div className="grid gap-3 text-xs text-rose-900 sm:grid-cols-2">
+            <div className="grid gap-3 sm:grid-cols-2">
               {renderFieldTile(
                 "Habits",
                 Array.isArray(lifestyle.habits) && lifestyle.habits.length > 0
                   ? lifestyle.habits.join(", ")
                   : "",
-                <ClipboardList className="w-3 h-3 text-rose-500" />
+                <ClipboardList className="h-4 w-4" />
               )}
               {renderFieldTile(
                 "Assets",
                 Array.isArray(lifestyle.assets) && lifestyle.assets.length > 0
                   ? lifestyle.assets.join(", ")
                   : "",
-                <Home className="w-3 h-3 text-rose-500" />
+                <Home className="h-4 w-4" />
               )}
               {renderFieldTile(
                 "Hobbies",
                 favourites.hobbies as string | undefined,
-                <Camera className="w-3 h-3 text-rose-500" />
+                <Camera className="h-4 w-4" />
               )}
               {renderFieldTile(
                 "Interests",
                 favourites.interests as string | undefined,
-                <Book className="w-3 h-3 text-rose-500" />
+                <Book className="h-4 w-4" />
               )}
               {renderFieldTile(
                 "Languages",
                 favourites.languages as string | undefined,
-                <Languages className="w-3 h-3 text-rose-500" />
+                <Languages className="h-4 w-4" />
               )}
               {renderFieldTile(
                 "Music",
                 favourites.music as string | undefined,
-                <Music className="w-3 h-3 text-rose-500" />
+                <Music className="h-4 w-4" />
               )}
               {renderFieldTile(
                 "Cuisine",
                 favourites.cuisine as string | undefined,
-                <UtensilsCrossed className="w-3 h-3 text-rose-500" />
+                <UtensilsCrossed className="h-4 w-4" />
               )}
               {renderFieldTile(
                 "Clothing style",
                 favourites.clothingStyle as string | undefined,
-                <Shirt className="w-3 h-3 text-rose-500" />
+                <Shirt className="h-4 w-4" />
               )}
               {renderFieldTile(
                 "Sports / fitness",
                 favourites.sports as string | undefined,
-                <Bike className="w-3 h-3 text-rose-500" />
+                <Bike className="h-4 w-4" />
               )}
               {renderFieldTile(
                 "Can cook",
                 favourites.canCook as string | undefined,
-                <UtensilsCrossed className="w-3 h-3 text-rose-500" />
+                <UtensilsCrossed className="h-4 w-4" />
               )}
               {renderFieldTile(
                 "Travel style",
                 favourites.travel as string | undefined,
-                <Plane className="w-3 h-3 text-rose-500" />
+                <Plane className="h-4 w-4" />
               )}
               {renderFieldTile(
                 "Favourite shows",
                 favourites.shows as string | undefined,
-                <Popcorn className="w-3 h-3 text-rose-500" />
+                <Popcorn className="h-4 w-4" />
               )}
               {renderFieldTile(
                 "Favourite books",
                 favourites.books as string | undefined,
-                <Book className="w-3 h-3 text-rose-500" />
+                <Book className="h-4 w-4" />
               )}
               {renderFieldTile(
                 "Favourite movies",
                 favourites.movies as string | undefined,
-                <Film className="w-3 h-3 text-rose-500" />
+                <Film className="h-4 w-4" />
               )}
               {renderFieldTile(
                 "Outdoor activities",
                 favourites.outdoor as string | undefined,
-                <Building className="w-3 h-3 text-rose-500" />
+                <Building className="h-4 w-4" />
               )}
               {renderFieldTile(
                 "Indoor activities",
                 favourites.indoor as string | undefined,
-                <Building className="w-3 h-3 text-rose-500" />
+                <Building className="h-4 w-4" />
               )}
               {renderFieldTile(
                 "Bucket list",
                 favourites.bucketList as string | undefined,
-                <Goal className="w-3 h-3 text-rose-500" />
+                <Goal className="h-4 w-4" />
               )}
               {renderFieldTile(
                 "Core values",
                 favourites.values as string | undefined,
-                <Sparkles className="w-3 h-3 text-rose-500" />
+                <Sparkles className="h-4 w-4" />
               )}
               {renderFieldTile(
                 "Fun quirks",
                 favourites.quirks as string | undefined,
-                <Clock className="w-3 h-3 text-rose-500" />
+                <Clock className="h-4 w-4" />
               )}
               {renderFieldTile(
                 "Ideal weekend",
                 favourites.weekend as string | undefined,
-                <Calendar className="w-3 h-3 text-rose-500" />
+                <Calendar className="h-4 w-4" />
               )}
             </div>
           </div>
         )}
 
         {showPartnerSection && (
-          <div className="rounded-2xl border border-[#f2e6ea] bg-white p-5 shadow-sm">
-            <div className="flex items-center gap-2 mb-2">
-              <div className="h-9 w-9 rounded-full bg-[#fffafb] border border-[#f2e6ea] flex items-center justify-center">
-                <Search className="w-4 h-4 text-[#f07f9c]" />
+          <div className="rounded-lg bg-white px-5 py-5 sm:px-6 sm:py-6 shadow-sm border border-rose-100">
+            <div className="flex items-center gap-2 mb-4 -mx-5 -mt-6 -ml-6 -mr-6 px-5 py-3 rounded-lg bg-[#ffeef3] border-b border-rose-100">
+              <div className="h-7 w-7 rounded-full bg-rose-100 flex items-center justify-center">
+                <Search className="w-3.5 h-3.5 text-rose-600" />
               </div>
-              <p className="text-xs font-semibold text-gray-600">Looking For</p>
-            </div>
-            <p className="rounded-xl border text-xs border-[#f2e6ea] bg-[#fffafb] px-4 py-3 min-h-[72px] flex items-start text-[#2e1d22]">
-              {partnerPreferences.summary ||
-                partnerPreferences.description ||
-                "Partner preferences will appear here when shared."}
-            </p>
-            <div className="flex items-center gap-2 mb-2">
-              <div className="h-9 w-9 mt-4 rounded-full bg-[#fffafb] border border-[#f2e6ea] flex items-center justify-center">
-                <Heart className="w-4 h-4 text-[#f07f9c]" />
-              </div>
-              <p className="text-xs font-semibold text-gray-600 mt-4">
+              <p className="text-sm font-semibold text-rose-900">
                 Partner Preferences
               </p>
             </div>
-            <div className="grid mt-3 gap-3 text-xs  text-rose-900 sm:grid-cols-2">
+
+            <div className="rounded-2xl bg-white border border-rose-100 overflow-hidden">
+              <div className="h-[3px] w-full bg-gradient-to-r from-[#ff4f7a] via-[#ff9aa6] to-[#ffb35a]" />
+              <div className="px-6 py-7">
+                <p className="text-center text-base font-semibold italic text-[#e11d48]">
+                  Looking For
+                </p>
+                <div className="mt-5 min-h-[90px] flex items-center justify-center px-4">
+                  <p className="text-center text-base text-[#3b2430] whitespace-pre-line">
+                    {partnerPreferences.summary ||
+                      partnerPreferences.description ||
+                      "Partner preferences will appear here when shared."}
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            <div className="mt-4 grid gap-3 sm:grid-cols-2">
               {renderFieldTile(
                 "Height",
                 partnerBasic.heightRange as string | undefined,
-                <Ruler className="w-3 h-3 text-rose-500" />
+                <Ruler className="h-4 w-4" />
               )}
               {renderFieldTile(
                 "Age",
                 partnerBasic.ageRange as string | undefined,
-                <Calendar className="w-3 h-3 text-rose-500" />
+                <Calendar className="h-4 w-4" />
               )}
               {renderFieldTile(
                 "Marital status",
                 partnerBasic.maritalStatus as string | undefined,
-                <HeartHandshake className="w-3 h-3 text-rose-500" />
+                <HeartHandshake className="h-4 w-4" />
               )}
               {renderFieldTile(
                 "Kundli & astro",
                 partnerBasic.kundliAstro as string | undefined,
-                <Star className="w-3 h-3 text-rose-500" />
+                <Star className="h-4 w-4" />
               )}
               {renderFieldTile(
                 "Caste",
                 partnerBasic.caste as string | undefined,
-                <Sparkles className="w-3 h-3 text-rose-500" />
+                <Sparkles className="h-4 w-4" />
               )}
               {renderFieldTile(
                 "Disability",
                 partnerBasic.disability as string | undefined,
-                <UserX className="w-3 h-3 text-rose-500" />
+                <UserX className="h-4 w-4" />
               )}
               {renderFieldTile(
                 "Religion",
                 partnerBasic.religion as string | undefined,
-                <Feather className="w-3 h-3 text-rose-500" />
+                <Feather className="h-4 w-4" />
               )}
               {renderFieldTile(
                 "Mother tongue",
                 partnerBasic.motherTongue as string | undefined,
-                <Languages className="w-3 h-3 text-rose-500" />
+                <Languages className="h-4 w-4" />
               )}
               {renderFieldTile(
                 "Preferred location",
@@ -1268,107 +1263,111 @@ export const MatrimonyDashboardOverview: React.FC<Props> = ({
                       .filter(Boolean)
                       .join(", ")
                   : "",
-                <MapPin className="w-3 h-3 text-rose-500" />
+                <MapPin className="h-4 w-4" />
               )}
             </div>
-            <div className="flex items-center gap-2 mb-2">
-              <div className="h-9 w-9 mt-4 rounded-full bg-[#fffafb] border border-[#f2e6ea] flex items-center justify-center">
-                <School className="w-4 h-4 text-[#f07f9c]" />
+
+            <div className="mt-5">
+              <div className="flex items-center gap-2 mb-3 rounded-lg bg-[#ffeef3] px-4 py-3">
+                <div className="h-7 w-7 rounded-full bg-rose-100 flex items-center justify-center">
+                  <School className="w-3.5 h-3.5 text-rose-600" />
+                </div>
+                <p className="text-sm font-semibold text-rose-900">
+                  Education & Career
+                </p>
               </div>
-              <p className="text-xs  mt-4 font-semibold text-gray-600">
-                Education & Career
-              </p>
-            </div>
-            <div className="grid mt-3 gap-3 text-xs  text-rose-900 sm:grid-cols-3">
-              {renderFieldTile(
-                "Education level",
-                partnerEdu.level as string | undefined,
-                <GraduationCap className="w-3 h-3 text-rose-500" />
-              )}
-              {renderFieldTile(
-                "Profession",
-                partnerEdu.profession as string | undefined,
-                <Briefcase className="w-3 h-3 text-rose-500" />
-              )}
-              {renderFieldTile(
-                "Earning",
-                partnerEdu.earning as string | undefined,
-                <IndianRupee className="w-3 h-3 text-rose-500" />
-              )}
-            </div>
-            <div className="flex items-center gap-2 mb-2">
-              <div className="h-9 w-9 mt-4 rounded-full bg-[#fffafb] border border-[#f2e6ea] flex items-center justify-center">
-                <Coffee className="w-4 h-4 text-[#f07f9c]" />
+              <div className="grid gap-3 sm:grid-cols-2">
+                {renderFieldTile(
+                  "Education level",
+                  partnerEdu.level as string | undefined,
+                  <GraduationCap className="h-4 w-4" />
+                )}
+                {renderFieldTile(
+                  "Profession",
+                  partnerEdu.profession as string | undefined,
+                  <Briefcase className="h-4 w-4" />
+                )}
+                {renderFieldTile(
+                  "Earning",
+                  partnerEdu.earning as string | undefined,
+                  <IndianRupee className="h-4 w-4" />
+                )}
               </div>
-              <p className="text-xs  mt-4 font-semibold text-gray-600">
-                Lifestyle
-              </p>
             </div>
-            <div className="grid mt-3 gap-3 text-xs  text-rose-900 sm:grid-cols-3">
-              {renderFieldTile(
-                "Diet",
-                partnerLife.diet as string | undefined,
-                <Utensils className="w-3 h-3 text-rose-500" />
-              )}
-              {renderFieldTile(
-                "Smoking",
-                partnerLife.smoke as string | undefined,
-                <CigaretteOff className="w-3 h-3 text-rose-500" />
-              )}
-              {renderFieldTile(
-                "Drinking",
-                partnerLife.drink as string | undefined,
-                <GlassWater className="w-3 h-3 text-rose-500" />
-              )}
+
+            <div className="mt-5">
+              <div className="flex items-center gap-2 mb-3 rounded-lg bg-[#ffeef3] px-4 py-3">
+                <div className="h-7 w-7 rounded-full bg-rose-100 flex items-center justify-center">
+                  <Coffee className="w-3.5 h-3.5 text-rose-600" />
+                </div>
+                <p className="text-sm font-semibold text-rose-900">Lifestyle</p>
+              </div>
+              <div className="grid gap-3 sm:grid-cols-2">
+                {renderFieldTile(
+                  "Diet",
+                  partnerLife.diet as string | undefined,
+                  <Utensils className="h-4 w-4" />
+                )}
+                {renderFieldTile(
+                  "Smoking",
+                  partnerLife.smoke as string | undefined,
+                  <CigaretteOff className="h-4 w-4" />
+                )}
+                {renderFieldTile(
+                  "Drinking",
+                  partnerLife.drink as string | undefined,
+                  <GlassWater className="h-4 w-4" />
+                )}
+              </div>
             </div>
           </div>
         )}
 
         {showAddressSection && (
-          <div className="rounded-2xl border border-[#f2e6ea] bg-white p-5 shadow-sm">
-            <div className="flex items-center gap-2 mb-2">
-              <div className="h-9 w-9 rounded-full bg-[#fffafb] border border-[#f2e6ea] flex items-center justify-center">
-                <MapPinned className="w-4 h-4 text-[#f07f9c]" />
+          <div className="rounded-lg bg-white px-5 py-5 sm:px-6 sm:py-6 shadow-sm border border-rose-100">
+            <div className="flex items-center gap-2 mb-4 -mx-5 -mt-6 -ml-6 -mr-6 px-5 py-3 rounded-lg bg-[#ffeef3] border-b border-rose-100">
+              <div className="h-7 w-7 rounded-full bg-rose-100 flex items-center justify-center">
+                <MapPinned className="w-3.5 h-3.5 text-rose-600" />
               </div>
-              <p className="text-xs font-semibold text-gray-600">
+              <p className="text-sm font-semibold text-rose-900">
                 Address Details
               </p>
             </div>
-            <div className="grid gap-3 text-xs text-rose-900 sm:grid-cols-3">
+            <div className="grid gap-3 sm:grid-cols-2">
               {renderFieldTile(
                 "Flat No. / Building",
                 (basic as any).residingFlatBuilding as string | undefined,
-                <Building2 className="w-3 h-3 text-rose-500" />
+                <Building2 className="h-4 w-4" />
               )}
               {renderFieldTile(
                 "City",
                 basic.residingCity as string | undefined,
-                <MapPin className="w-3 h-3 text-rose-500" />
+                <MapPin className="h-4 w-4" />
               )}
               {renderFieldTile(
                 "District",
                 (basic as any).residingDistrict as string | undefined,
-                <Map className="w-3 h-3 text-rose-500" />
+                <Map className="h-4 w-4" />
               )}
               {renderFieldTile(
                 "State",
                 basic.residingState as string | undefined,
-                <MapPin className="w-3 h-3 text-rose-500" />
+                <MapPin className="h-4 w-4" />
               )}
               {renderFieldTile(
                 "Pin code",
                 (basic as any).residingPincode as string | undefined,
-                <Hash className="w-3 h-3 text-rose-500" />
+                <Hash className="h-4 w-4" />
               )}
               {renderFieldTile(
                 "Country",
                 basic.residingCountry as string | undefined,
-                <Globe className="w-3 h-3 text-rose-500" />
+                <Globe className="h-4 w-4" />
               )}
               {renderFieldTile(
                 "Nationality",
                 basic.citizenship as string | undefined,
-                <Globe className="w-3 h-3 text-rose-500" />
+                <Globe className="h-4 w-4" />
               )}
               {/* {renderFieldTile("Location", basic.location as string | undefined)} */}
             </div>
@@ -1376,92 +1375,92 @@ export const MatrimonyDashboardOverview: React.FC<Props> = ({
         )}
 
         {showContactSection && (
-          <div className="rounded-2xl border border-[#f2e6ea] bg-white p-5 shadow-sm">
-            <div className="flex items-center gap-2 mb-2">
-              <div className="h-9 w-9 rounded-full bg-[#fffafb] border border-[#f2e6ea] flex items-center justify-center">
-                <Fingerprint className="w-4 h-4 text-[#f07f9c]" />
+          <div className="rounded-lg bg-white px-5 py-5 sm:px-6 sm:py-6 shadow-sm border border-rose-100">
+            <div className="flex items-center gap-2 mb-4 -mx-5 -mt-6 -ml-6 -mr-6 px-5 py-3 rounded-lg bg-[#ffeef3] border-b border-rose-100">
+              <div className="h-7 w-7 rounded-full bg-rose-100 flex items-center justify-center">
+                <Fingerprint className="w-3.5 h-3.5 text-rose-600" />
               </div>
-              <p className="text-xs font-semibold text-gray-600">
+              <p className="text-sm font-semibold text-rose-900">
                 Contact &amp; Identity
               </p>
             </div>
-            <div className="grid gap-3 text-xs text-[#2e1d22] sm:grid-cols-2">
+            <div className="grid gap-3 sm:grid-cols-2">
               {renderFieldTile(
                 "Email",
                 contact.email,
-                <Mail className="w-3 h-3 text-rose-500" />
+                <Mail className="h-4 w-4" />
               )}
               {renderFieldTile(
                 "Phone",
                 contact.phone,
-                <Phone className="w-3 h-3 text-rose-500" />
+                <Phone className="h-4 w-4" />
               )}
               {renderFieldTile(
                 "Alternate phone",
                 (contact as any).alternatePhone as string | undefined,
-                <Phone className="w-3 h-3 text-rose-500" />
+                <Phone className="h-4 w-4" />
               )}
               {renderFieldTile(
                 "Aadhaar status",
                 (contact as any).aadhaarStatus as string | undefined,
-                <Fingerprint className="w-3 h-3 text-rose-500" />
+                <Fingerprint className="h-4 w-4" />
               )}
             </div>
           </div>
         )}
 
         {showFamilySection && (
-          <div className="rounded-2xl border border-[#f2e6ea] bg-white p-5 shadow-sm">
-            <div className="flex items-center gap-2 mb-2">
-              <div className="h-9 w-9 rounded-full bg-[#fffafb] border border-[#f2e6ea] flex items-center justify-center">
-                <Home className="w-4 h-4 text-[#f07f9c]" />
+          <div className="rounded-lg bg-white px-5 py-5 sm:px-6 sm:py-6 shadow-sm border border-rose-100">
+            <div className="flex items-center gap-2 mb-4 -mx-5 -mt-6 -ml-6 -mr-6 px-5 py-3 rounded-lg bg-[#ffeef3] border-b border-rose-100">
+              <div className="h-7 w-7 rounded-full bg-rose-100 flex items-center justify-center">
+                <Home className="w-3.5 h-3.5 text-rose-600" />
               </div>
-              <p className="text-xs font-semibold text-gray-600">
+              <p className="text-sm font-semibold text-rose-900">
                 Family Information
               </p>
             </div>
-            <div className="grid gap-3 text-xs text-gray-700 sm:grid-cols-2">
+            <div className="grid gap-3 sm:grid-cols-2">
               {renderFieldTile(
                 "Father's name",
                 (family as any).fatherName as string | undefined,
-                <User2 className="w-3 h-3 text-rose-500" />
+                <User2 className="h-4 w-4" />
               )}
               {renderFieldTile(
                 "Father's occupation",
                 (family as any).fatherOccupation as string | undefined,
-                <Briefcase className="w-3 h-3 text-rose-500" />
+                <Briefcase className="h-4 w-4" />
               )}
               {renderFieldTile(
                 "Father belongs from (native)",
                 (family as any).fatherBelongsFrom as string | undefined,
-                <MapPin className="w-3 h-3 text-rose-500" />
+                <MapPin className="h-4 w-4" />
               )}
               {renderFieldTile(
                 "Mother's name",
                 (family as any).motherName as string | undefined,
-                <User2 className="w-3 h-3 text-rose-500" />
+                <User2 className="h-4 w-4" />
               )}
               {renderFieldTile(
                 "Mother's occupation",
                 (family as any).motherOccupation as string | undefined,
-                <Briefcase className="w-3 h-3 text-rose-500" />
+                <Briefcase className="h-4 w-4" />
               )}
               {renderFieldTile(
                 "Mother belongs from (native)",
                 (family as any).motherBelongsFrom as string | undefined,
-                <MapPin className="w-3 h-3 text-rose-500" />
+                <MapPin className="h-4 w-4" />
               )}
 
               {renderFieldTile(
                 "Family background",
                 family.familyBackground as string | undefined,
-                <Users className="w-3 h-3 text-rose-500" />
+                <Users className="h-4 w-4" />
               )}
 
               {renderFieldTile(
                 "Family values",
                 (family as any).familyValues as string | undefined,
-                <Sparkles className="w-3 h-3 text-rose-500" />
+                <Sparkles className="h-4 w-4" />
               )}
 
               {renderFieldTile(
@@ -1471,7 +1470,7 @@ export const MatrimonyDashboardOverview: React.FC<Props> = ({
               {renderFieldTile(
                 "Family type",
                 basic.familyType as string | undefined,
-                <Users className="w-3 h-3 text-rose-500" />
+                <Users className="h-4 w-4" />
               )}
               {renderFieldTile(
                 "Living with parents",
@@ -1480,23 +1479,23 @@ export const MatrimonyDashboardOverview: React.FC<Props> = ({
                     ? "Living with parents"
                     : "Living Alone"
                   : "",
-                <Users className="w-3 h-3 text-rose-500" />
+                <Users className="h-4 w-4" />
               )}
             </div>
-            <div className=" gap-3">
-              <div className="flex items-center gap-2 mt-4 mb-2">
-                <div className="h-9 w-9 rounded-full bg-[#fffafb] border border-[#f2e6ea] flex items-center justify-center">
-                  <Users className="w-4 h-4 text-[#f07f9c]" />
+            <div className="mt-5">
+              <div className="flex items-center gap-2 mb-3 rounded-lg bg-[#ffeef3] px-4 py-3">
+                <div className="h-7 w-7 rounded-full bg-rose-100 flex items-center justify-center">
+                  <Users className="w-3.5 h-3.5 text-rose-600" />
                 </div>
-                <p className="text-xs font-semibold text-gray-600">Siblings</p>
+                <p className="text-sm font-semibold text-rose-900">Siblings</p>
               </div>
-              <div className="gap-3 mb-2 mt-2 sm:grid sm:grid-cols-2">
+              <div className="grid gap-3 sm:grid-cols-2">
                 {parseSiblingTiles(family.siblings as string | undefined).map(
                   (sibling: SiblingDisplay, index: number) =>
                     renderFieldTile(
                       sibling.label,
                       sibling.value,
-                      <User2 className="w-3 h-3 text-rose-500" />,
+                      <User2 className="h-4 w-4" />,
                       `${sibling.label}-${index}`
                     )
                 )}
@@ -1506,121 +1505,124 @@ export const MatrimonyDashboardOverview: React.FC<Props> = ({
         )}
 
         {showReligionSection && (
-          <div className="rounded-2xl border border-[#f2e6ea] bg-white p-5 shadow-sm gap-3">
-            <div className="flex items-center gap-2 mb-2">
-              <div className="h-9 w-9 rounded-full bg-[#fffafb] border border-[#f2e6ea] flex items-center justify-center">
-                <Church className="w-4 h-4 text-[#f07f9c]" />
+          <div className="rounded-lg bg-white px-5 py-5 sm:px-6 sm:py-6 shadow-sm border border-rose-100">
+            <div className="flex items-center gap-2 mb-4 -mx-5 -mt-6 -ml-6 -mr-6 px-5 py-3 rounded-lg bg-[#ffeef3] border-b border-rose-100">
+              <div className="h-7 w-7 rounded-full bg-rose-100 flex items-center justify-center">
+                <Church className="w-3.5 h-3.5 text-rose-600" />
               </div>
-              <p className="text-xs font-semibold text-gray-600">
+              <p className="text-sm font-semibold text-rose-900">
                 Religion &amp; Community
               </p>
             </div>
-            <div className="grid gap-3 sm:grid-cols-3">
+            <div className="grid gap-3 sm:grid-cols-2">
               {renderFieldTile(
                 "Religion",
                 basic.religion,
-                <Feather className="w-3 h-3 text-rose-500" />
+                <Feather className="h-4 w-4" />
               )}
               {renderFieldTile(
                 "Caste / community",
                 basic.caste,
-                <Sparkles className="w-3 h-3 text-rose-500" />
+                <Sparkles className="h-4 w-4" />
               )}
               {renderFieldTile(
                 "Mother tongue",
                 basic.motherTongue,
-                <Languages className="w-3 h-3 text-rose-500" />
+                <Languages className="h-4 w-4" />
               )}
             </div>
-            <div className="flex items-center gap-2 mt-4 mb-2">
-              <div className="h-9 w-9 rounded-full bg-[#fffafb] border border-[#f2e6ea] flex items-center justify-center">
-                <Leaf className="w-4 h-4 text-[#f07f9c]" />
+
+            <div className="mt-5">
+              <div className="flex items-center gap-2 mb-3 rounded-lg bg-[#ffeef3] px-4 py-3">
+                <div className="h-7 w-7 rounded-full bg-rose-100 flex items-center justify-center">
+                  <Leaf className="w-3.5 h-3.5 text-rose-600" />
+                </div>
+                <p className="text-sm font-semibold text-rose-900">Gotra</p>
               </div>
-              <p className="text-xs font-semibold text-gray-600">Gotra</p>
-            </div>
-            <div className="grid gap-3 sm:grid-cols-2">
-              {renderFieldTile(
-                "Self gotra",
-                basic.gothra as string | undefined,
-                <Sparkles className="w-3 h-3 text-rose-500" />
-              )}
-              {renderFieldTile(
-                "Mother gotra",
-                (full.kundli as any)?.motherGotra as string | undefined,
-                <Sparkles className="w-3 h-3 text-rose-500" />
-              )}
-              {renderFieldTile(
-                "Grandmother (Dadi) gotra",
-                (full.kundli as any)?.dadiGotra as string | undefined,
-                <Sparkles className="w-3 h-3 text-rose-500" />
-              )}
-              {renderFieldTile(
-                "Grandmother (Nani) gotra",
-                (full.kundli as any)?.naniGotra as string | undefined,
-                <Sparkles className="w-3 h-3 text-rose-500" />
-              )}
+              <div className="grid gap-3 sm:grid-cols-2">
+                {renderFieldTile(
+                  "Self gotra",
+                  basic.gothra as string | undefined,
+                  <Sparkles className="h-4 w-4" />
+                )}
+                {renderFieldTile(
+                  "Mother gotra",
+                  (full.kundli as any)?.motherGotra as string | undefined,
+                  <Sparkles className="h-4 w-4" />
+                )}
+                {renderFieldTile(
+                  "Grandmother (Dadi) gotra",
+                  (full.kundli as any)?.dadiGotra as string | undefined,
+                  <Sparkles className="h-4 w-4" />
+                )}
+                {renderFieldTile(
+                  "Grandmother (Nani) gotra",
+                  (full.kundli as any)?.naniGotra as string | undefined,
+                  <Sparkles className="h-4 w-4" />
+                )}
+              </div>
             </div>
           </div>
         )}
 
         {showKundliSection && (
-          <div className="rounded-2xl border border-[#f2e6ea] bg-white p-5 shadow-sm">
-            <div className="flex items-center gap-2 mb-2">
-              <div className="h-9 w-9 rounded-full bg-[#fffafb] border border-[#f2e6ea] flex items-center justify-center">
-                <Star className="w-4 h-4 text-[#f07f9c]" />
+          <div className="rounded-lg bg-white px-5 py-5 sm:px-6 sm:py-6 shadow-sm border border-rose-100">
+            <div className="flex items-center gap-2 mb-4 -mx-5 -mt-6 -ml-6 -mr-6 px-5 py-3 rounded-lg bg-[#ffeef3] border-b border-rose-100">
+              <div className="h-7 w-7 rounded-full bg-rose-100 flex items-center justify-center">
+                <Star className="w-3.5 h-3.5 text-rose-600" />
               </div>
-              <p className="text-xs font-semibold text-gray-600">
+              <p className="text-sm font-semibold text-rose-900">
                 Kundli &amp; Astro
               </p>
             </div>
-            <div className="grid gap-3 text-xs text-gray-700 sm:grid-cols-3">
+            <div className="grid gap-3 sm:grid-cols-2">
               {renderFieldTile(
                 "Birth date",
                 formatDateOnly(basic.birthDate) as string | undefined,
-                <Calendar className="w-3 h-3 text-rose-500" />
+                <Calendar className="h-4 w-4" />
               )}
               {renderFieldTile(
                 "Birth time",
                 (full.kundli as any)?.birthTime as string | undefined,
-                <Timer className="w-3 h-3 text-rose-500" />
+                <Timer className="h-4 w-4" />
               )}
               {renderFieldTile(
                 "Gotra",
                 basic.gothra as string | undefined,
-                <Sparkles className="w-3 h-3 text-rose-500" />
+                <Sparkles className="h-4 w-4" />
               )}
               {renderFieldTile(
                 "Nakshatra",
                 (full.kundli as any)?.nakshatra as string | undefined,
-                <Sun className="w-3 h-3 text-rose-500" />
+                <Sun className="h-4 w-4" />
               )}
               {renderFieldTile(
                 "Raashi",
                 (full.kundli as any)?.raashi as string | undefined,
-                <Target className="w-3 h-3 text-rose-500" />
+                <Target className="h-4 w-4" />
               )}
               {renderFieldTile(
                 "Manglik",
                 (full.kundli as any)?.manglikStatus as string | undefined,
-                <Link className="w-3 h-3 text-rose-500" />
+                <Link className="h-4 w-4" />
               )}
               {renderFieldTile(
                 "Astrology system",
                 (full.kundli as any)?.astrologySystem as string | undefined,
-                <Orbit className="w-3 h-3 text-rose-500" />
+                <Orbit className="h-4 w-4" />
               )}
               {renderFieldTile(
                 "Horoscope preference",
                 (full.kundli as any)?.horoscopePreference as string | undefined,
-                <Timer className="w-3 h-3 text-rose-500" />
+                <Timer className="h-4 w-4" />
               )}
               {renderFieldTile(
                 "Dosha details",
                 (full.kundli as any)?.doshaDetails as string | undefined,
-                <AlertTriangle className="w-3 h-3 text-rose-500" />
+                <AlertTriangle className="h-4 w-4" />
               )}
             </div>
-            <div className="grid gap-3 mt-3 text-xs text-gray-700 sm:grid-cols-1">
+            <div className="grid gap-3 mt-3 sm:grid-cols-1">
               {renderFieldTile(
                 "Place of birth",
                 (() => {
@@ -1656,25 +1658,25 @@ export const MatrimonyDashboardOverview: React.FC<Props> = ({
                   }
                   return deduped.join(", ");
                 })() as string | undefined,
-                <MapPin className="w-3 h-3 text-rose-500" />
+                <MapPin className="h-4 w-4" />
               )}
             </div>
           </div>
         )}
 
         {showAdditionalNotesSection && (
-          <div className="rounded-2xl border border-[#f2e6ea] bg-white p-5 shadow-sm">
-            <div className="flex items-center gap-2 mb-2">
-              <div className="h-9 w-9 rounded-full bg-[#fffafb] border border-[#f2e6ea] flex items-center justify-center">
-                <MessageCircle className="w-4 h-4 text-[#f07f9c]" />
-              </div>
-              <p className="text-xs font-semibold text-gray-600">
+          <div className="rounded-2xl bg-white shadow-sm border border-rose-100 overflow-hidden">
+            <div className="h-[3px] w-full bg-gradient-to-r from-[#ff4f7a] via-[#ff9aa6] to-[#ffb35a]" />
+            <div className="px-6 py-7">
+              <p className="text-center text-lg font-semibold italic text-[#e11d48]">
                 Additional Notes
               </p>
+              <div className="mt-5 min-h-[85px] flex items-center justify-center px-4">
+                <p className="text-center text-base text-[#3b2430] whitespace-pre-line">
+                  {full.additionalNotes}
+                </p>
+              </div>
             </div>
-            <p className="rounded-xl border text-xs border-[#f2e6ea] bg-[#fffafb] px-4 py-3 min-h-[72px] flex items-start text-[#2e1d22]">
-              {full.additionalNotes}
-            </p>
           </div>
         )}
       </div>

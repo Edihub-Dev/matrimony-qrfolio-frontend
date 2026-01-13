@@ -7,19 +7,12 @@ import {
   Sparkles,
   X,
   CheckCircle,
-  Eye,
-  Menu,
 } from "lucide-react";
 import {
   fetchNotifications,
   markNotificationsRead,
   type NotificationItem,
 } from "../lib/notificationsApi";
-import {
-  getInteractionAnalytics,
-  type InteractionAnalyticsItem,
-  type InteractionBucket,
-} from "../lib/analyticsApi";
 import { Button } from "./ui/Button";
 
 const PAGE_SIZE = 20;
@@ -109,16 +102,6 @@ export const NotificationsDrawer: React.FC<NotificationsDrawerProps> = ({
   const [onlyUnread, setOnlyUnread] = useState(false);
   const [markingAll, setMarkingAll] = useState(false);
 
-  const [bucket, setBucket] = useState<InteractionBucket>("viewed_me");
-  const [interactionsOpen, setInteractionsOpen] = useState(false);
-  const [analyticsItems, setAnalyticsItems] = useState<
-    InteractionAnalyticsItem[]
-  >([]);
-  const [analyticsPage, setAnalyticsPage] = useState(1);
-  const [analyticsHasMore, setAnalyticsHasMore] = useState(false);
-  const [analyticsLoading, setAnalyticsLoading] = useState(false);
-  const [analyticsError, setAnalyticsError] = useState<string | null>(null);
-
   const loadPage = async (pageToLoad: number, replace: boolean) => {
     setLoading(true);
     setError(null);
@@ -152,58 +135,11 @@ export const NotificationsDrawer: React.FC<NotificationsDrawerProps> = ({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isOpen, onlyUnread]);
 
-  const loadAnalyticsPage = async (
-    targetBucket: InteractionBucket,
-    pageToLoad: number,
-    replace: boolean
-  ) => {
-    setAnalyticsLoading(true);
-    setAnalyticsError(null);
-    try {
-      const result = await getInteractionAnalytics(
-        targetBucket,
-        pageToLoad,
-        10
-      );
-      if (!result.ok) {
-        setAnalyticsError(result.error || "Failed to load analytics.");
-        if (replace) {
-          setAnalyticsItems([]);
-          setAnalyticsHasMore(false);
-          setAnalyticsPage(1);
-        }
-        return;
-      }
-
-      const data = result.data;
-      if (replace) {
-        setAnalyticsItems(data.items || []);
-      } else {
-        setAnalyticsItems((prev) => [...prev, ...(data.items || [])]);
-      }
-      setAnalyticsHasMore(Boolean(data.hasMore));
-      setAnalyticsPage(data.page || pageToLoad);
-    } finally {
-      setAnalyticsLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    if (!isOpen || !interactionsOpen) return;
-    void loadAnalyticsPage(bucket, 1, true);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isOpen, bucket, interactionsOpen]);
-
   if (!isOpen) return null;
 
   const handleLoadMoreNotifications = () => {
     if (loading || !hasMore) return;
     void loadPage(page + 1, false);
-  };
-
-  const handleLoadMoreAnalytics = () => {
-    if (analyticsLoading || !analyticsHasMore) return;
-    void loadAnalyticsPage(bucket, analyticsPage + 1, false);
   };
 
   const handleMarkAllRead = async () => {
@@ -289,197 +225,6 @@ export const NotificationsDrawer: React.FC<NotificationsDrawerProps> = ({
         </header>
 
         <div className="flex-1 overflow-y-auto px-2 py-2">
-          {/* Interactions trigger and section */}
-          {/* <div className="mb-2 flex items-center justify-between">
-            <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-rose-400">
-              Who interacted with your profile
-            </p>
-            <button
-              type="button"
-              onClick={() => setInteractionsOpen((prev) => !prev)}
-              className="inline-flex h-8 w-8 items-center justify-center rounded-full border border-rose-200 bg-white text-rose-500 shadow-sm hover:bg-rose-50"
-            >
-              <Menu className="h-3.5 w-3.5" />
-            </button>
-          </div> */}
-
-          {/* {interactionsOpen && (
-            <div className="mb-3">
-              <div className="mb-2 flex flex-wrap gap-1.5">
-                {(
-                  [
-                    {
-                      id: "viewed_me" as InteractionBucket,
-                      label: "Viewed",
-                      icon: <Eye className="h-3.5 w-3.5" />,
-                    },
-                    {
-                      id: "liked_me" as InteractionBucket,
-                      label: "Liked",
-                      icon: <Heart className="h-3.5 w-3.5" />,
-                    },
-                    {
-                      id: "shortlisted_me" as InteractionBucket,
-                      label: "Shortlisted",
-                      icon: <Star className="h-3.5 w-3.5" />,
-                    },
-                    {
-                      id: "commented_me" as InteractionBucket,
-                      label: "Comments",
-                      icon: <MessageCircle className="h-3.5 w-3.5" />,
-                    },
-                  ] as const
-                ).map((b) => {
-                  const isActive = b.id === bucket;
-                  return (
-                    <button
-                      key={b.id}
-                      type="button"
-                      onClick={() => {
-                        setBucket(b.id);
-                      }}
-                      className={
-                        "inline-flex items-center gap-1.5 rounded-full border px-3 py-1 text-[11px] font-semibold transition " +
-                        (isActive
-                          ? "border-transparent bg-gradient-to-r from-rose-600 to-amber-500 text-white shadow-sm shadow-rose-300"
-                          : "border-rose-200 bg-white text-rose-600 hover:bg-rose-50")
-                      }
-                    >
-                      <span
-                        className={
-                          "inline-flex h-6 w-6 items-center justify-center rounded-full border " +
-                          (isActive
-                            ? "border-white/40 bg-white/10 text-white"
-                            : "border-rose-200 bg-rose-50 text-rose-500")
-                        }
-                      >
-                        {b.icon}
-                      </span>
-                      <span className="truncate">{b.label}</span>
-                    </button>
-                  );
-                })}
-              </div>
-
-              {analyticsLoading &&
-                analyticsItems.length === 0 &&
-                !analyticsError && (
-                  <div className="flex h-24 items-center justify-center">
-                    <p className="text-sm text-rose-600">
-                      Loading interactions…
-                    </p>
-                  </div>
-                )}
-
-              {analyticsError && (
-                <div className="mb-2 rounded-xl bg-rose-50 px-3 py-2 text-xs text-rose-700">
-                  {analyticsError}
-                </div>
-              )}
-
-              {!analyticsLoading &&
-                !analyticsError &&
-                analyticsItems.length === 0 && (
-                  <p className="text-xs text-rose-700">
-                    No recent interactions in this category yet.
-                  </p>
-                )}
-
-              {analyticsItems.length > 0 && (
-                <ul className="space-y-1.5">
-                  {analyticsItems.map((item) => {
-                    const lastTimestamp = formatTimestamp(
-                      item.lastInteractionAt
-                    );
-                    const location = [item.city, item.state]
-                      .filter(Boolean)
-                      .join(", ");
-                    return (
-                      <li key={item.profileId}>
-                        <button
-                          type="button"
-                          onClick={() => {
-                            if (
-                              item.profileId &&
-                              typeof window !== "undefined"
-                            ) {
-                              window.location.href = `/feed/profile/${item.profileId}`;
-                              onClose();
-                            }
-                          }}
-                          className="flex w-full items-start gap-3 rounded-2xl border border-rose-100 bg-rose-50/80 px-2.5 py-2 text-left transition hover:bg-rose-100"
-                        >
-                          <div className="relative h-8 w-8 shrink-0 overflow-hidden rounded-full bg-rose-100 flex items-center justify-center text-[11px] font-semibold text-rose-700">
-                            {item.profilePhotoUrl ? (
-                              <img
-                                src={item.profilePhotoUrl}
-                                alt={item.displayName}
-                                className="h-full w-full object-cover"
-                              />
-                            ) : (
-                              <span>
-                                {item.displayName.charAt(0).toUpperCase()}
-                              </span>
-                            )}
-                          </div>
-                          <div className="flex-1 min-w-0">
-                            <div className="flex items-center justify-between gap-2">
-                              <p className="truncate text-[11px] font-semibold text-rose-900">
-                                {item.displayName}
-                              </p>
-                              {lastTimestamp && (
-                                <p className="shrink-0 text-[9px] text-rose-500">
-                                  {lastTimestamp}
-                                </p>
-                              )}
-                            </div>
-                            {location && (
-                              <p className="mt-0.5 truncate text-[10px] text-rose-700">
-                                {location}
-                              </p>
-                            )}
-                            <p className="mt-0.5 text-[10px] text-rose-600">
-                              {item.interactionCount} interactions
-                            </p>
-                          </div>
-                        </button>
-                      </li>
-                    );
-                  })}
-                </ul>
-              )}
-
-              {analyticsHasMore && (
-                <div className="mt-2">
-                  <Button
-                    type="button"
-                    size="sm"
-                    disabled={analyticsLoading}
-                    onClick={handleLoadMoreAnalytics}
-                    className="bg-gradient-to-r from-rose-600 to-amber-500 text-[10px] px-2.5 py-1.5 h-auto text-rose-50 hover:bg-rose-600/90"
-                  >
-                    {analyticsLoading ? "Loading…" : "Load more"}
-                  </Button>
-                </div>
-              )}
-            </div>
-          )} */}
-
-          {/* <div className="mt-4 mb-2 h-px bg-rose-100" /> */}
-
-          {/* Notifications list below the interactions section */}
-          {/* {loading && items.length === 0 && (
-            <div className="flex h-40 items-center justify-center">
-              <p className="text-sm text-rose-600">Loading notifications…</p>
-            </div>
-          )} */}
-
-          {/* {error && !loading && items.length === 0 && (
-            <div className="flex h-40 items-center justify-center text-center">
-              <p className="text-sm text-rose-700 max-w-xs">{error}</p>
-            </div>
-          )} */}
-
           {!loading && !error && items.length === 0 && (
             <div className="flex h-40 items-center justify-center text-center">
               <div className="max-w-xs space-y-1.5">
