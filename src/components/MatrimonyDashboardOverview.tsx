@@ -43,7 +43,7 @@ import {
   Mail,
   Fingerprint,
   Star,
-  MessageCircle,
+  // MessageCircle,
   Weight,
   UserX,
   Laptop,

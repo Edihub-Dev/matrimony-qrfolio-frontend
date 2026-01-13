@@ -21,8 +21,17 @@ import { RealtimeToast } from "./components/RealtimeToast";
 const MATRIMONY_API_BASE_URL: string | undefined = (import.meta as any)?.env
   ?.VITE_MATRIMONY_API_BASE_URL;
 
-if (MATRIMONY_API_BASE_URL) {
-  axios.defaults.baseURL = String(MATRIMONY_API_BASE_URL).replace(/\/$/, "");
+const DEFAULT_PROD_MATRIMONY_API_BASE_URL =
+  "https://7mfrn3e6e5.execute-api.ap-south-1.amazonaws.com";
+
+const resolvedBaseUrl =
+  MATRIMONY_API_BASE_URL ||
+  ((import.meta as any)?.env?.MODE === "production"
+    ? DEFAULT_PROD_MATRIMONY_API_BASE_URL
+    : "");
+
+if (resolvedBaseUrl) {
+  axios.defaults.baseURL = String(resolvedBaseUrl).replace(/\/$/, "");
 }
 
 const getRootComponent = () => {
