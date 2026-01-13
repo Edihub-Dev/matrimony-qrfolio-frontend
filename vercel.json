@@ -1,0 +1,8 @@
+{
+  "rewrites": [
+    {
+      "source": "/api/:path*",
+      "destination": "https://7mfrn3e6e5.execute-api.ap-south-1.amazonaws.com/api/:path*"
+    }
+  ]
+}
