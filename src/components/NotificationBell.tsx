@@ -14,6 +14,7 @@ export const NotificationBell: React.FC<NotificationBellProps> = ({
 
   useEffect(() => {
     let isMounted = true;
+    let pollTimer: number | undefined;
 
     const loadInitial = async () => {
       try {
@@ -28,10 +29,26 @@ export const NotificationBell: React.FC<NotificationBellProps> = ({
     void loadInitial();
 
     const socket = getSocket();
-    if (!socket)
+    if (!socket) {
+      pollTimer = window.setInterval(() => {
+        void (async () => {
+          try {
+            const res = await fetchNotifications(1, 10, false);
+            if (!isMounted) return;
+            setUnreadCount(res.unreadCount || 0);
+          } catch {
+            // best-effort
+          }
+        })();
+      }, 5000);
+
       return () => {
         isMounted = false;
+        if (pollTimer) {
+          window.clearInterval(pollTimer);
+        }
       };
+    }
 
     const handleNew = (payload: any) => {
       if (!isMounted) return;
@@ -54,6 +71,9 @@ export const NotificationBell: React.FC<NotificationBellProps> = ({
 
     return () => {
       isMounted = false;
+      if (pollTimer) {
+        window.clearInterval(pollTimer);
+      }
       socket.off("notification:new", handleNew);
       socket.off("notification:read", handleRead);
     };
