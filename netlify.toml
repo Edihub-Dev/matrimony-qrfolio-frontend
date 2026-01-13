@@ -17,3 +17,14 @@
   command = "vite"
   port = 3000
   publish = "dist"
+
+[[redirects]]
+  from = "/api/*"
+  to = "https://7mfrn3e6e5.execute-api.ap-south-1.amazonaws.com/api/:splat"
+  status = 200
+  force = true
+
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200
