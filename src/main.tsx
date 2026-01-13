@@ -18,8 +18,9 @@ import { PaymentCallback } from "./components/PaymentCallback";
 import { AuthProvider } from "./context/AuthContext";
 import { RealtimeToast } from "./components/RealtimeToast";
 
-const MATRIMONY_API_BASE_URL: string | undefined = (import.meta as any)?.env
-  ?.VITE_MATRIMONY_API_BASE_URL;
+const MATRIMONY_API_BASE_URL: string | undefined =
+  (import.meta as any)?.env?.VITE_MATRIMONY_API_BASE_URL ||
+  (import.meta as any)?.env?.VITE_API_BASE_URL;
 
 const DEFAULT_PROD_MATRIMONY_API_BASE_URL =
   "https://7mfrn3e6e5.execute-api.ap-south-1.amazonaws.com";
