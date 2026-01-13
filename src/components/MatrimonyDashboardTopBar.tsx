@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { Bell, LogOut, Settings } from "lucide-react";
+import { Bell, LogOut } from "lucide-react";
 
 type MatrimonyDashboardTopBarProps = {
   label: string;
@@ -111,13 +111,13 @@ export const MatrimonyDashboardTopBar: React.FC<
             <Bell className="h-5 w-5" />
             <span className="absolute top-2 right-2 size-2 bg-red-500 rounded-full border border-white" />
           </button>
-          <button
+          {/* <button
             type="button"
             className="p-2 rounded-full hover:bg-[#fceef2] text-[#9c6b79] transition-colors"
             aria-label="Settings"
           >
             <Settings className="h-5 w-5" />
-          </button>
+          </button> */}
           <div className="h-6 w-px bg-gray-200 mx-1" />
           <button
             type="button"
