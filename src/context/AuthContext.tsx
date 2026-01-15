@@ -49,7 +49,6 @@ const realValue: AuthContextValue = {
         {
           headers: {
             ...getAuthHeaders(),
-            "Content-Type": "multipart/form-data",
           },
         }
       );
