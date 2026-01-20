@@ -1111,8 +1111,8 @@ export const MatrimonyFeedSection: React.FC = () => {
   const showEmptyState = !loading && !error && sortedItems.length === 0;
 
   return (
-    <div className="bg-[#fdfafb] px-0 py-0">
-      <div className="mx-auto flex flex-col lg:flex-row gap-4 max-w-[1440px]">
+     <div className="bg-[#fdfafb] px-0 py-0 w-full overflow-x-hidden">
+      <div className="mx-auto w-full min-w-0 flex flex-col lg:flex-row gap-4 max-w-[1440px] px-4 sm:px-6 lg:px-0">
         <aside className="hidden w-full max-w-[280px] mt-3 flex-col gap-6 lg:flex shrink-0">
           <div className="flex items-center justify-between">
             <h2 className="font-bold text-lg text-[#2b1d20]">Filters</h2>
@@ -1133,7 +1133,7 @@ export const MatrimonyFeedSection: React.FC = () => {
           />
         </aside>
 
-        <div className="flex-1 flex flex-col gap-5 pb-8">
+        <div className="flex-1 min-w-0 flex flex-col gap-5 pb-8">
           <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
             <div className="shrink-0">
               <h1 className="text-xl font-bold text-[#2b1d20]">
@@ -1145,16 +1145,16 @@ export const MatrimonyFeedSection: React.FC = () => {
             </div>
 
             <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-end lg:gap-4">
-              <div className="flex items-center justify-between gap-3">
-                <div className="flex items-center gap-3">
+               <div className="flex flex-wrap items-center justify-between gap-3 min-w-0">
+                <div className="flex flex-wrap items-center gap-3 min-w-0">
                   <span className="text-sm text-[#6e5a5d] font-medium">
                     Sort by:
                   </span>
-                  <div className="relative">
+                  <div className="relative min-w-0">
                     <select
                       value={sortOption}
                       onChange={handleSortChange}
-                      className="appearance-none bg-white border border-[#f0e4e7] text-[#2b1d20] text-sm font-medium rounded-lg pl-3 pr-8 py-2 focus:ring-[#e07d8c] focus:border-[#e07d8c] cursor-pointer shadow-sm"
+                      className="appearance-none bg-white border border-[#f0e4e7] text-[#2b1d20] text-sm font-medium rounded-lg pl-3 pr-8 py-2 focus:ring-[#e07d8c] focus:border-[#e07d8c] cursor-pointer shadow-sm max-w-full"
                     >
                       {(Object.keys(sortLabels) as SortOption[]).map(
                         (option) => (
@@ -1219,7 +1219,7 @@ export const MatrimonyFeedSection: React.FC = () => {
 
           {!showEmptyState && sortedItems.length > 0 && (
             <>
-              <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+              <div className="grid w-full min-w-0 grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
                 {sortedItems.map((item) => renderFeedCard(item))}
               </div>
 
