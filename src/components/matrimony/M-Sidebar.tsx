@@ -434,7 +434,7 @@ export const MatrimonySidebar: React.FC<MatrimonySidebarProps> = ({
             'inline-flex',
             'items-center',
             'justify-center',
-            'rounded-full',
+            'rounded-2',
             'bg-rose-200',
             'p-2',
             'text-rose-800',
