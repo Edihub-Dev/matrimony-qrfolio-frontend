@@ -422,21 +422,23 @@ export const MatrimonySidebar: React.FC<MatrimonySidebarProps> = ({
 
   return (
     <>
-      {isMobile && (
+      {isMobile && !isOpen && (
         <button
           type="button"
           onClick={() => setIsOpen((prev) => !prev)}
           className={cn(
             'fixed',
-            'top-4',
-            'left-4',
+            'bottom-5',
+            'right-5',
             'z-40',
-            'inline-flex',
+            'flex',
             'items-center',
             'justify-center',
-            'rounded-2',
+            'h-11',
+            'w-11',
+            'rounded-full',
             'bg-rose-200',
-            'p-2',
+            'p-0',
             'text-rose-800',
             'shadow-lg',
             'shadow-rose-200',
