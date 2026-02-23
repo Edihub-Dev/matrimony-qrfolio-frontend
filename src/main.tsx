@@ -3,20 +3,21 @@ import { createRoot } from "react-dom/client";
 import axios from "axios";
 import App from "./App.tsx";
 import "./index.css";
-import MatrimonialProfilePage from "./pages/MatrimonialProfilePage";
-import MatrimonyOnboardingPage from "./pages/MatrimonyOnboardingPage";
-import PublicMatrimonyProfilePage from "./pages/PublicMatrimonyProfilePage";
-import MatrimonyQrCodePage from "./pages/MatrimonyQrCodePage";
-import FeedPage from "./pages/FeedPage";
-import FeedProfilePage from "./pages/PublicProfilePage.tsx";
-import AdminUsersPage from "./pages/AdminUsersPage";
-import AdminProfilesPage from "./pages/AdminProfilesPage";
-import SwipeFeedPage from "./pages/SwipeFeedPage";
-import InteractionAnalyticsPage from "./pages/InteractionAnalyticsPage";
-import NotificationsPage from "./pages/NotificationsPage";
-import { PaymentCallback } from "./components/PaymentCallback";
-import { AuthProvider } from "./context/AuthContext";
-import { RealtimeToast } from "./components/RealtimeToast";
+import MatrimonialProfilePage from "@/pages/matrimony/MatrimonialProfilePage";
+import MatrimonyOnboardingPage from "@/pages/matrimony/M-Edit-Profile-page.tsx";
+import PublicMatrimonyProfilePage from "@/pages/matrimony/PublicMatrimonyProfilePage";
+import MatrimonyQrCodePage from "@/pages/matrimony/MatrimonyQrCodePage";
+import FeedPage from "@/pages/feed/FeedPage";
+import FeedProfilePage from "@/pages/feed/FeedProfilePage";
+import AdminUsersPage from "@/pages/admin/AdminUsersPage";
+import AdminProfilesPage from "@/pages/admin/AdminProfilesPage";
+import InteractionAnalyticsPage from "@/pages/feed/InteractionAnalyticsPage";
+import NotificationsPage from "@/pages/notifications/NotificationsPage";
+import { PaymentCallback } from "@/components/payments/PaymentCallback";
+import { AuthProvider } from "@/context/AuthContext";
+import { RealtimeToast } from "@/components/shared/RealtimeToast";
+import LoginPage from "@/pages/auth/LoginPage";
+import SignupPage from "@/pages/auth/SignupPage";
 
 const MATRIMONY_API_BASE_URL: string | undefined =
   (import.meta as any)?.env?.VITE_MATRIMONY_API_BASE_URL ||
@@ -42,6 +43,14 @@ const getRootComponent = () => {
 
   const path = window.location.pathname || "/";
 
+  if (path.startsWith("/login")) {
+    return LoginPage;
+  }
+
+  if (path.startsWith("/signup")) {
+    return SignupPage;
+  }
+
   if (path.startsWith("/payment/callback")) {
     return PaymentCallback;
   }
@@ -56,10 +65,6 @@ const getRootComponent = () => {
 
   if (path.startsWith("/feed/profile/")) {
     return FeedProfilePage;
-  }
-
-  if (path.startsWith("/feed/swipe")) {
-    return SwipeFeedPage;
   }
 
   if (path.startsWith("/feed")) {
@@ -103,5 +108,5 @@ createRoot(document.getElementById("root")!).render(
         <RealtimeToast />
       </>
     </AuthProvider>
-  </StrictMode>
+  </StrictMode>,
 );
