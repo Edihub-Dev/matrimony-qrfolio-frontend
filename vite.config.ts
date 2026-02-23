@@ -12,45 +12,7 @@ export default defineConfig({
   },
 
   build: {
-    rollupOptions: {
-      output: {
-        manualChunks(id) {
-          if (!id.includes('node_modules')) return;
-
-          if (
-            id.includes('/node_modules/react/') ||
-            id.includes('/node_modules/react-dom/')
-          ) {
-            return 'react-vendor';
-          }
-
-          if (id.includes('/node_modules/framer-motion/')) {
-            return 'motion-vendor';
-          }
-
-          if (id.includes('/node_modules/lucide-react/')) {
-            return 'icons-vendor';
-          }
-
-          if (id.includes('/node_modules/firebase/')) {
-            return 'firebase-vendor';
-          }
-
-          if (
-            id.includes('/node_modules/jspdf/') ||
-            id.includes('/node_modules/html2canvas/')
-          ) {
-            return 'pdf-vendor';
-          }
-
-          if (id.includes('/node_modules/socket.io-client/')) {
-            return 'socket-vendor';
-          }
-
-          return 'vendor';
-        },
-      },
-    },
+    sourcemap: true,
   },
 
   optimizeDeps: {
