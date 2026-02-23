@@ -78,7 +78,7 @@ export const MatrimonyDashboardTopBar: React.FC<
                 );
               }}
             >
-              <div className="relative w-[200px] xs:w-[160px] sm:w-[280px] md:w-[320px] max-w-full">
+              <div className="relative w-[240px] xs:w-[160px] sm:w-[280px] md:w-[320px] max-w-full">
                 <input
                   value={query}
                   onChange={(e) => setQuery(e.target.value)}
