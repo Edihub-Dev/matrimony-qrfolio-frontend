@@ -48,8 +48,8 @@ export const MatrimonyDashboardTopBar: React.FC<
 
   return (
     <header className="bg-white border-b border-[#f2e6ea] sticky top-0 z-20">
-      <div className="h-18 px-6 sm:px-8 py-4 flex items-center justify-between">
-        <div className="flex items-center gap-2">
+      <div className="h-18 px-4 sm:px-8 py-4 flex flex-wrap items-center justify-between gap-3">
+        <div className="flex min-w-0 items-center gap-2">
           <button
             type="button"
             onClick={onHomeClick}
@@ -58,10 +58,12 @@ export const MatrimonyDashboardTopBar: React.FC<
             Home
           </button>
           <span className="text-[#9c6b79] text-sm">/</span>
-          <span className="text-[#2e1d22] text-sm font-bold">{label}</span>
+          <span className="min-w-0 truncate text-[#2e1d22] text-sm font-bold">
+            {label}
+          </span>
         </div>
 
-        <div className="flex items-center gap-4">
+        <div className="flex min-w-0 flex-wrap items-center justify-end gap-2 sm:gap-4">
           {showSearch && (
             <form
               className="block"
@@ -76,7 +78,7 @@ export const MatrimonyDashboardTopBar: React.FC<
                 );
               }}
             >
-              <div className="relative w-[160px] sm:w-[240px] md:w-[320px]">
+              <div className="relative w-[120px] xs:w-[160px] sm:w-[240px] md:w-[320px] max-w-full">
                 <input
                   value={query}
                   onChange={(e) => setQuery(e.target.value)}
@@ -127,7 +129,7 @@ export const MatrimonyDashboardTopBar: React.FC<
             className="flex items-center gap-2 px-4 py-2 rounded-lg border border-[#f2e6ea] bg-white text-[#9c6b79] hover:bg-[#fffafb] hover:text-[#2e1d22] transition-colors"
           >
             <LogOut className="h-4 w-4" />
-            <span className="text-sm font-bold">Logout</span>
+            <span className="hidden sm:inline text-sm font-bold">Logout</span>
           </button>
         </div>
       </div>

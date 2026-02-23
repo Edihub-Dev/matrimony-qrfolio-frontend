@@ -1,6 +1,7 @@
 import React, { useEffect, useRef, useState } from "react";
 import axios from "axios";
 import { RiVerifiedBadgeFill } from "react-icons/ri";
+import { cn } from "../../lib/core/utils";
 import {
   LayoutDashboard,
   QrCode,
@@ -277,49 +278,49 @@ export const MatrimonySidebar: React.FC<MatrimonySidebarProps> = ({
     .toUpperCase();
 
   const sidebar = (
-    <div className="h-full w-[280px] flex flex-col border-r border-[#e6e2de] bg-white text-[#171411] overflow-y-auto">
-      <div className="flex items-center gap-3 px-6 py-6 border-b border-[#f8eef2]">
-        <div className="flex items-center justify-center size-10 rounded-full bg-[#ec5e87]/20 text-[#ec5e87]">
+    <div className={cn('h-full', 'w-[280px]', 'flex', 'flex-col', 'border-r', 'border-[#e6e2de]', 'bg-white', 'text-[#171411]', 'overflow-y-auto')}>
+      <div className={cn('flex', 'items-center', 'gap-3', 'px-6', 'py-6', 'border-b', 'border-[#f8eef2]')}>
+        <div className={cn('flex', 'items-center', 'justify-center', 'size-10', 'rounded-full', 'bg-[#ec5e87]/20', 'text-[#ec5e87]')}>
           <img
             src="/assets/M-Logo.png"
             alt="Matrimony QRfolio"
-            className="h-6 w-6 object-contain"
+            className={cn('h-6', 'w-6', 'object-contain')}
             loading="lazy"
             referrerPolicy="no-referrer"
           />
         </div>
-        <h2 className="text-1xl font-bold tracking-tight text-[#171411]">
+        <h2 className={cn('text-1xl', 'font-bold', 'tracking-tight', 'text-[#171411]')}>
           Matrimony QRfolio
         </h2>
       </div>
 
       {(userName || userEmail) && (
-        <div className="px-4 py-6">
-          <div className="flex items-center gap-3 p-3 rounded-xl bg-[#fffafb]">
-            <div className="bg-center bg-no-repeat aspect-square bg-cover rounded-full size-12 overflow-hidden bg-[#fceef2] flex items-center justify-center">
+        <div className={cn('px-4', 'py-6')}>
+          <div className={cn('flex', 'items-center', 'gap-3', 'p-3', 'rounded-xl', 'bg-[#fffafb]')}>
+            <div className={cn('bg-center', 'bg-no-repeat', 'aspect-square', 'bg-cover', 'rounded-full', 'size-12', 'overflow-hidden', 'bg-[#fceef2]', 'flex', 'items-center', 'justify-center')}>
               {userPhoto ? (
                 <img
                   src={userPhoto}
                   alt={userName || "Profile photo"}
-                  className="h-full w-full object-cover rounded-full"
+                  className={cn('h-full', 'w-full', 'object-cover', 'rounded-full')}
                 />
               ) : (
-                <span className="text-sm font-semibold text-[#9c6b79]">
+                <span className={cn('text-sm', 'font-semibold', 'text-[#9c6b79]')}>
                   {initials}
                 </span>
               )}
             </div>
-            <div className="flex flex-col overflow-hidden">
-              <div className="flex items-center gap-2">
-                <h1 className="text-[#2e1d22] text-base font-bold leading-tight truncate">
+            <div className={cn('flex', 'flex-col', 'overflow-hidden')}>
+              <div className={cn('flex', 'items-center', 'gap-2')}>
+                <h1 className={cn('text-[#2e1d22]', 'text-base', 'font-bold', 'leading-tight', 'truncate')}>
                   {userName || "Matrimony user"}
                 </h1>
                 {String(kycStatus || "NOT_VERIFIED").toUpperCase() ===
                 "VERIFIED" ? (
-                  <RiVerifiedBadgeFill className="shrink-0 text-rose-600" />
+                  <RiVerifiedBadgeFill className={cn('shrink-0', 'text-rose-600')} />
                 ) : null}
               </div>
-              <p className="text-[#9c6b79] text-xs font-medium truncate">
+              <p className={cn('text-[#9c6b79]', 'text-xs', 'font-medium', 'truncate')}>
                 {userEmail || ""}
               </p>
             </div>
@@ -327,20 +328,21 @@ export const MatrimonySidebar: React.FC<MatrimonySidebarProps> = ({
         </div>
       )}
 
-      <nav className="px-4 py-2 space-y-1">
+      <nav className={cn('px-4', 'py-2', 'space-y-1')}>
         {navItems
-          .filter((item) => (item.id === "admin" ? isAdmin : true))
+          .filter((item) => (item.id === 'admin' ? isAdmin : true))
           .map((item) => {
             const Icon = item.icon;
             const isActive = activeTab === item.id;
+
             return (
               <button
                 key={item.id}
                 type="button"
                 onClick={() => {
-                  if (item.id === "admin") {
-                    if (typeof window !== "undefined") {
-                      window.location.href = "/admin/users";
+                  if (item.id === 'admin') {
+                    if (typeof window !== 'undefined') {
+                      window.location.href = '/admin/users';
                     }
                     if (isMobile) {
                       setIsOpen(false);
@@ -354,22 +356,24 @@ export const MatrimonySidebar: React.FC<MatrimonySidebarProps> = ({
                   }
                 }}
                 className={
-                  "flex w-full items-center gap-3 px-3 py-3 rounded-lg transition-colors " +
+                  'flex w-full items-center gap-3 px-3 py-3 rounded-lg transition-colors ' +
                   (isActive
-                    ? "bg-[#ec5e87]/10 text-[#d6456b]"
-                    : "hover:bg-[#fff0f5] text-[#5c5046]")
+                    ? 'bg-[#ec5e87]/10 text-[#d6456b]'
+                    : 'hover:bg-[#fff0f5] text-[#5c5046]')
                 }
               >
                 <Icon
                   className={
-                    "w-4 h-4 " +
-                    (isActive ? "text-[#ec5e87]" : "text-[#877564]")
+                    'w-4 h-4 ' +
+                    (isActive ? 'text-[#ec5e87]' : 'text-[#877564]')
                   }
                 />
                 <span
                   className={
-                    "text-sm " +
-                    (isActive ? "font-bold text-[#171411]" : "font-medium")
+                    'text-sm ' +
+                    (isActive
+                      ? 'font-bold text-[#171411]'
+                      : 'font-medium')
                   }
                 >
                   {item.label}
@@ -378,18 +382,37 @@ export const MatrimonySidebar: React.FC<MatrimonySidebarProps> = ({
             );
           })}
       </nav>
-      <div className={"p-4 pb-6 border-t space-y-3 " + "border-[#f2e6ea]"}>
+
+      <div className={cn('p-4', 'pb-6', 'border-t', 'space-y-3', 'border-[#f2e6ea]')}>
         {qrFolioUrl && (
           <button
             type="button"
             onClick={() => {
-              if (typeof window !== "undefined") {
+              if (typeof window !== 'undefined') {
                 window.location.href = qrFolioUrl;
               }
             }}
-            className="flex w-full items-center justify-center gap-2 rounded-xl border border-rose-200 bg-white px-3 py-2 text-xs font-semibold text-rose-800 hover:bg-rose-50 hover:border-rose-300 transition-colors"
+            className={cn(
+              'flex',
+              'w-full',
+              'items-center',
+              'justify-center',
+              'gap-2',
+              'rounded-xl',
+              'border',
+              'border-rose-200',
+              'bg-white',
+              'px-3',
+              'py-2',
+              'text-xs',
+              'font-semibold',
+              'text-rose-800',
+              'hover:bg-rose-50',
+              'hover:border-rose-300',
+              'transition-colors',
+            )}
           >
-            <ArrowLeft className="w-4 h-4" />
+            <ArrowLeft className={cn('w-4', 'h-4')} />
             <span>Back to QR Folio</span>
           </button>
         )}
@@ -403,28 +426,49 @@ export const MatrimonySidebar: React.FC<MatrimonySidebarProps> = ({
         <button
           type="button"
           onClick={() => setIsOpen((prev) => !prev)}
-          className="fixed top-4 left-4 z-40 inline-flex items-center justify-center rounded-full bg-rose-200 p-2 text-rose-800 shadow-lg shadow-rose-200 lg:hidden transition-transform duration-150 active:scale-95"
+          className={cn(
+            'fixed',
+            'top-4',
+            'left-4',
+            'z-40',
+            'inline-flex',
+            'items-center',
+            'justify-center',
+            'rounded-full',
+            'bg-rose-200',
+            'p-2',
+            'text-rose-800',
+            'shadow-lg',
+            'shadow-rose-200',
+            'lg:hidden',
+            'transition-transform',
+            'duration-150',
+            'active:scale-95',
+          )}
         >
-          <Menu className="w-5 h-5" />
+          <Menu className={cn('w-5', 'h-5')} />
         </button>
       )}
 
       {isMobile ? (
         <div
-          className={`fixed inset-0 z-30 flex transition-transform duration-300 ${
-            isOpen ? "translate-x-0" : "-translate-x-full"
-          }`}
+          className={
+            'fixed inset-0 z-30 flex transition-transform duration-300 ' +
+            (isOpen ? 'translate-x-0' : '-translate-x-full')
+          }
         >
           {sidebar}
           <button
             type="button"
             aria-label="Close sidebar"
             onClick={() => setIsOpen(false)}
-            className="flex-1 bg-black/40"
+            className={cn('flex-1', 'bg-black/40')}
           />
         </div>
       ) : (
-        <div className="hidden lg:block h-screen sticky top-0">{sidebar}</div>
+        <div className={cn('hidden', 'lg:block', 'h-screen', 'sticky', 'top-0')}>
+          {sidebar}
+        </div>
       )}
     </>
   );
