@@ -2,8 +2,6 @@ import React, { useEffect, useState, useRef } from "react";
 import { motion } from "framer-motion";
 import toast from "react-hot-toast";
 import { RiVerifiedBadgeFill } from "react-icons/ri";
-import html2canvas from "html2canvas";
-import jsPDF from "jspdf";
 import {
   User2,
   Briefcase,
@@ -72,10 +70,12 @@ import {
 import { getPublicMatrimonyProfile } from "@/lib/matrimony/publicMatrimonyApi";
 import { getMatrimonyProfileById } from "@/lib/matrimony/matrimonyApi";
 import { blockUser, reportProfile, unblockUser } from "@/lib/core/reportsApi";
+import { downloadPublicMatrimonyProfilePdf } from "@/lib/matrimony/publicMatrimonyPdfApi";
 import QRCode from "react-qr-code";
 // import { NotificationBell } from "./NotificationBell";
 import { NotificationsDrawer } from "@/components/notifications/NotificationsDrawer";
 import { cn } from "../../lib/core/utils";
+import jsPDF from "jspdf";
 // import {
 //   getProfileComments,
 //   // type ProfileComment,
@@ -903,63 +903,53 @@ export const PublicMatrimonyProfile: React.FC<PublicMatrimonyProfileProps> = ({
     await handleCopyLink();
   };
 
-  const handleDownloadPdf = async () => {
+  const handleDownloadPdf = () => {
     if (typeof window === "undefined") return;
 
-    const section = profileSectionRef.current;
-    if (!section) {
-      toast.error("Profile content not available for PDF.");
+    const targetId =
+      (profileId && profileId.trim()) ||
+      (profile && (profile as any).id ? String((profile as any).id).trim() : "");
+
+    if (!targetId) {
+      toast.error("Profile id unavailable.");
       return;
     }
 
     toast.loading("Preparing PDF…", { id: "download-pdf" });
 
-    try {
-      // Capture the profile section as canvas
-      const canvas = await html2canvas(section, {
-        useCORS: true,
-        allowTaint: true,
-        background: "#ffffff",
-        logging: false,
-      });
+    void (async () => {
+      try {
+        const result = await downloadPublicMatrimonyProfilePdf(targetId);
 
-      const imgData = canvas.toDataURL("image/png");
-      const imgWidth = canvas.width;
-      const imgHeight = canvas.height;
+        if (!result.ok) {
+          toast.error(result.error || "Failed to download PDF.", {
+            id: "download-pdf",
+          });
+          return;
+        }
 
-      // Calculate PDF dimensions (A4)
-      const pdf = new jsPDF({
-        orientation: imgWidth > imgHeight ? "landscape" : "portrait",
-        unit: "mm",
-        format: "a4",
-      });
+        const blob = result.data;
+        const url = URL.createObjectURL(blob);
+        const nameBase = displayProfileId
+          ? `matrimonial-profile-${displayProfileId}`
+          : "matrimonial-profile";
+        const name = `${nameBase}.pdf`;
 
-      const pdfWidth = pdf.internal.pageSize.getWidth();
-      const pdfHeight = pdf.internal.pageSize.getHeight();
+        const link = document.createElement("a");
+        link.href = url;
+        link.download = name;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        window.setTimeout(() => URL.revokeObjectURL(url), 1500);
 
-      // Scale image to fit PDF
-      const ratio = Math.min(pdfWidth / imgWidth, pdfHeight / imgHeight);
-      const scaledWidth = imgWidth * ratio;
-      const scaledHeight = imgHeight * ratio;
-
-      // Center the image
-      const x = (pdfWidth - scaledWidth) / 2;
-      const y = 10;
-
-      pdf.addImage(imgData, "PNG", x, y, scaledWidth, scaledHeight);
-
-      const nameBase = displayProfileId
-        ? `matrimonial-profile-${displayProfileId}`
-        : "matrimonial-profile";
-
-      pdf.save(`${nameBase}.pdf`);
-      toast.success("PDF downloaded", { id: "download-pdf" });
-    } catch (err: any) {
-      console.error("PDF generation error:", err);
-      toast.error(err?.message || "Failed to generate PDF.", {
-        id: "download-pdf",
-      });
-    }
+        toast.success("PDF downloaded", { id: "download-pdf" });
+      } catch (err: any) {
+        toast.error(err?.message || "Failed to download PDF.", {
+          id: "download-pdf",
+        });
+      }
+    })();
   };
 
   const handlePreviewImages = () => {
