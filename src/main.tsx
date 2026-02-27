@@ -36,6 +36,59 @@ if (resolvedBaseUrl) {
   axios.defaults.baseURL = String(resolvedBaseUrl).replace(/\/$/, "");
 }
 
+const clearAuthStorage = () => {
+  if (typeof window === "undefined") return;
+  try {
+    window.localStorage.removeItem("qrAuthToken");
+    window.localStorage.removeItem("qrPhone");
+    window.localStorage.removeItem("qrEmail");
+    window.localStorage.removeItem("qrName");
+    window.localStorage.removeItem("qrMatrimonyPhoto");
+    window.localStorage.removeItem("qrIsAdmin");
+    window.localStorage.removeItem("qrKycStatus");
+    window.dispatchEvent(new Event("qrAdminUpdated"));
+    window.dispatchEvent(new Event("qrMatrimonyPhotoUpdated"));
+    window.dispatchEvent(new Event("qrKycStatusUpdated"));
+  } catch {
+    // ignore
+  }
+};
+
+let didRedirect = false;
+
+axios.interceptors.request.use((config) => {
+  if (typeof window === "undefined") return config;
+  const token = window.localStorage.getItem("qrAuthToken");
+  if (!token) return config;
+
+  config.headers = config.headers || {};
+  const current = (config.headers as any).Authorization;
+  if (!current) {
+    (config.headers as any).Authorization = `Bearer ${token}`;
+  }
+
+  return config;
+});
+
+axios.interceptors.response.use(
+  (res) => res,
+  (error) => {
+    const status = error?.response?.status;
+
+    if (
+      (status === 401 || status === 403) &&
+      typeof window !== "undefined" &&
+      !didRedirect
+    ) {
+      didRedirect = true;
+      clearAuthStorage();
+      window.location.replace("/");
+    }
+
+    return Promise.reject(error);
+  },
+);
+
 const getRootComponent = () => {
   if (typeof window === "undefined") {
     return App;

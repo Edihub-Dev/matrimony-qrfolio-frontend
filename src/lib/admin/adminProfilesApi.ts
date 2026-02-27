@@ -1,19 +1,5 @@
 import axios from 'axios';
 
-const getAuthToken = (): string | null => {
-  if (typeof window === 'undefined') return null;
-  return window.localStorage.getItem('qrAuthToken');
-};
-
-const authHeaders = () => {
-  const token = getAuthToken();
-  return token
-    ? {
-        Authorization: `Bearer ${token}`,
-      }
-    : {};
-};
-
 export type AdminProfileOwner = {
   _id: string;
   email?: string | null;
@@ -104,7 +90,6 @@ export const listProfilesForAdmin = async (
       '/api/admin/profiles',
       {
         params,
-        headers: authHeaders(),
       },
     );
 
@@ -133,7 +118,6 @@ export const verifyProfileForAdmin = async (
       {},
       {
         headers: {
-          ...authHeaders(),
           'Content-Type': 'application/json',
         },
       },
@@ -164,7 +148,6 @@ export const unverifyProfileForAdmin = async (
       {},
       {
         headers: {
-          ...authHeaders(),
           'Content-Type': 'application/json',
         },
       },
@@ -196,7 +179,6 @@ export const featureProfileForAdmin = async (
       payload,
       {
         headers: {
-          ...authHeaders(),
           'Content-Type': 'application/json',
         },
       },

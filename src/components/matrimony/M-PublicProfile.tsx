@@ -2,6 +2,8 @@ import React, { useEffect, useState, useRef } from "react";
 import { motion } from "framer-motion";
 import toast from "react-hot-toast";
 import { RiVerifiedBadgeFill } from "react-icons/ri";
+import html2canvas from "html2canvas";
+import jsPDF from "jspdf";
 import {
   User2,
   Briefcase,
@@ -70,10 +72,10 @@ import {
 import { getPublicMatrimonyProfile } from "@/lib/matrimony/publicMatrimonyApi";
 import { getMatrimonyProfileById } from "@/lib/matrimony/matrimonyApi";
 import { blockUser, reportProfile, unblockUser } from "@/lib/core/reportsApi";
-import { downloadPublicMatrimonyProfilePdf } from "@/lib/matrimony/publicMatrimonyPdfApi";
 import QRCode from "react-qr-code";
 // import { NotificationBell } from "./NotificationBell";
 import { NotificationsDrawer } from "@/components/notifications/NotificationsDrawer";
+import { cn } from "../../lib/core/utils";
 // import {
 //   getProfileComments,
 //   // type ProfileComment,
@@ -267,15 +269,15 @@ const InfoTile: React.FC<InfoTileProps> = ({
   const display = valueOrPlaceholder(raw, placeholder);
 
   return (
-    <div className="flex items-start gap-3 rounded-lg bg-white px-3 py-2.5 shadow-sm border border-[#ffd6e4]">
-      <div className="flex h-8 w-8 items-center justify-center rounded-full bg-[#ffe1eb] text-[#f1557a]">
+    <div className={cn('flex', 'items-start', 'gap-3', 'rounded-lg', 'bg-white', 'px-3', 'py-2.5', 'shadow-sm', 'border', 'border-[#ffd6e4]')}>
+      <div className={cn('flex', 'h-8', 'w-8', 'items-center', 'justify-center', 'rounded-full', 'bg-[#ffe1eb]', 'text-[#f1557a]')}>
         {icon}
       </div>
-      <div className="flex flex-col">
-        <span className="text-[11px] font-semibold tracking-wide text-[#f38aa2] uppercase">
+      <div className={cn('flex', 'flex-col')}>
+        <span className={cn('text-[11px]', 'font-semibold', 'tracking-wide', 'text-[#f38aa2]', 'uppercase')}>
           {label}
         </span>
-        <span className="text-xs sm:text-[13px] font-medium text-[#3b2430] break-words">
+        <span className={cn('text-xs', 'sm:text-[13px]', 'font-medium', 'text-[#3b2430]', 'break-words')}>
           {display}
         </span>
       </div>
@@ -489,16 +491,16 @@ export const PublicMatrimonyProfile: React.FC<PublicMatrimonyProfileProps> = ({
 
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center py-16">
-        <p className="text-sm text-gray-500">Loading Profile…</p>
+      <div className={cn('flex', 'items-center', 'justify-center', 'py-16')}>
+        <p className={cn('text-sm', 'text-gray-500')}>Loading Profile…</p>
       </div>
     );
   }
 
   if (error || !profile) {
     return (
-      <div className="flex items-center justify-center py-16">
-        <p className="text-sm text-rose-600">{error || "Profile not found."}</p>
+      <div className={cn('flex', 'items-center', 'justify-center', 'py-16')}>
+        <p className={cn('text-sm', 'text-rose-600')}>{error || "Profile not found."}</p>
       </div>
     );
   }
@@ -901,53 +903,63 @@ export const PublicMatrimonyProfile: React.FC<PublicMatrimonyProfileProps> = ({
     await handleCopyLink();
   };
 
-  const handleDownloadPdf = () => {
+  const handleDownloadPdf = async () => {
     if (typeof window === "undefined") return;
 
-    const targetId =
-      (profileId && profileId.trim()) ||
-      (profile && (profile as any).id ? String((profile as any).id).trim() : "");
-
-    if (!targetId) {
-      toast.error("Profile id unavailable.");
+    const section = profileSectionRef.current;
+    if (!section) {
+      toast.error("Profile content not available for PDF.");
       return;
     }
 
     toast.loading("Preparing PDF…", { id: "download-pdf" });
 
-    void (async () => {
-      try {
-        const result = await downloadPublicMatrimonyProfilePdf(targetId);
+    try {
+      // Capture the profile section as canvas
+      const canvas = await html2canvas(section, {
+        useCORS: true,
+        allowTaint: true,
+        background: "#ffffff",
+        logging: false,
+      });
 
-        if (!result.ok) {
-          toast.error(result.error || "Failed to download PDF.", {
-            id: "download-pdf",
-          });
-          return;
-        }
+      const imgData = canvas.toDataURL("image/png");
+      const imgWidth = canvas.width;
+      const imgHeight = canvas.height;
 
-        const blob = result.data;
-        const url = URL.createObjectURL(blob);
-        const nameBase = displayProfileId
-          ? `matrimonial-profile-${displayProfileId}`
-          : "matrimonial-profile";
-        const name = `${nameBase}.pdf`;
+      // Calculate PDF dimensions (A4)
+      const pdf = new jsPDF({
+        orientation: imgWidth > imgHeight ? "landscape" : "portrait",
+        unit: "mm",
+        format: "a4",
+      });
 
-        const link = document.createElement("a");
-        link.href = url;
-        link.download = name;
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-        window.setTimeout(() => URL.revokeObjectURL(url), 1500);
+      const pdfWidth = pdf.internal.pageSize.getWidth();
+      const pdfHeight = pdf.internal.pageSize.getHeight();
 
-        toast.success("PDF downloaded", { id: "download-pdf" });
-      } catch (err: any) {
-        toast.error(err?.message || "Failed to download PDF.", {
-          id: "download-pdf",
-        });
-      }
-    })();
+      // Scale image to fit PDF
+      const ratio = Math.min(pdfWidth / imgWidth, pdfHeight / imgHeight);
+      const scaledWidth = imgWidth * ratio;
+      const scaledHeight = imgHeight * ratio;
+
+      // Center the image
+      const x = (pdfWidth - scaledWidth) / 2;
+      const y = 10;
+
+      pdf.addImage(imgData, "PNG", x, y, scaledWidth, scaledHeight);
+
+      const nameBase = displayProfileId
+        ? `matrimonial-profile-${displayProfileId}`
+        : "matrimonial-profile";
+
+      pdf.save(`${nameBase}.pdf`);
+      toast.success("PDF downloaded", { id: "download-pdf" });
+    } catch (err: any) {
+      console.error("PDF generation error:", err);
+      toast.error(err?.message || "Failed to generate PDF.", {
+        id: "download-pdf",
+      });
+    }
   };
 
   const handlePreviewImages = () => {
@@ -967,84 +979,84 @@ export const PublicMatrimonyProfile: React.FC<PublicMatrimonyProfileProps> = ({
     {
       key: "hobbies",
       label: "Hobbies",
-      icon: <Camera className="h-4 w-4" />,
+      icon: <Camera className={cn('h-4', 'w-4')} />,
     },
     {
       key: "interests",
       label: "Interests",
-      icon: <Book className="h-4 w-4" />,
+      icon: <Book className={cn('h-4', 'w-4')} />,
     },
     {
       key: "languages",
       label: "Languages",
-      icon: <Languages className="h-4 w-4" />,
+      icon: <Languages className={cn('h-4', 'w-4')} />,
     },
-    { key: "music", label: "Music", icon: <Music className="h-4 w-4" /> },
+    { key: "music", label: "Music", icon: <Music className={cn('h-4', 'w-4')} /> },
     {
       key: "cuisine",
       label: "Cuisine",
-      icon: <UtensilsCrossed className="h-4 w-4" />,
+      icon: <UtensilsCrossed className={cn('h-4', 'w-4')} />,
     },
     {
       key: "clothingStyle",
       label: "Clothing style",
-      icon: <Shirt className="h-4 w-4" />,
+      icon: <Shirt className={cn('h-4', 'w-4')} />,
     },
-    { key: "sports", label: "Sports", icon: <Bike className="h-4 w-4" /> },
+    { key: "sports", label: "Sports", icon: <Bike className={cn('h-4', 'w-4')} /> },
     {
       key: "canCook",
       label: "Can cook",
-      icon: <UtensilsCrossed className="h-4 w-4" />,
+      icon: <UtensilsCrossed className={cn('h-4', 'w-4')} />,
     },
     {
       key: "travel",
       label: "Travel style",
-      icon: <Plane className="h-4 w-4" />,
+      icon: <Plane className={cn('h-4', 'w-4')} />,
     },
     {
       key: "shows",
       label: "Favourite shows",
-      icon: <Popcorn className="h-4 w-4" />,
+      icon: <Popcorn className={cn('h-4', 'w-4')} />,
     },
     {
       key: "books",
       label: "Favourite books",
-      icon: <Book className="h-4 w-4" />,
+      icon: <Book className={cn('h-4', 'w-4')} />,
     },
     {
       key: "movies",
       label: "Favourite movies",
-      icon: <Film className="h-4 w-4" />,
+      icon: <Film className={cn('h-4', 'w-4')} />,
     },
     {
       key: "outdoor",
       label: "Outdoor activities",
-      icon: <Building className="h-4 w-4" />,
+      icon: <Building className={cn('h-4', 'w-4')} />,
     },
     {
       key: "indoor",
       label: "Indoor activities",
-      icon: <Building className="h-4 w-4" />,
+      icon: <Building className={cn('h-4', 'w-4')} />,
     },
     {
       key: "bucketList",
       label: "Bucket list",
-      icon: <Goal className="h-4 w-4" />,
+      icon: <Goal className={cn('h-4', 'w-4')} />,
     },
     {
       key: "values",
       label: "Core values",
-      icon: <Sparkles className="h-4 w-4" />,
+      icon: <Sparkles className={cn('h-4', 'w-4')} />,
     },
     {
       key: "quirks",
       label: "Fun quirks",
-      icon: <Clock className="h-4 w-4" />,
+      icon: <Clock className={cn('h-4', 'w-4')} />,
     },
     {
       key: "weekend",
       label: "Ideal weekend",
-      icon: <Calendar className="h-4 w-4" />,
+      icon: <Calendar className={cn('h-4', 'w-4')} />,
     },
   ];
 
@@ -1059,31 +1071,31 @@ export const PublicMatrimonyProfile: React.FC<PublicMatrimonyProfileProps> = ({
   return (
     <motion.section
       ref={profileSectionRef}
-      className="min-h-screen bg-[#ffe5ee] text-[#3b2430]"
+      className={cn('min-h-screen', 'bg-[#ffe5ee]', 'text-[#3b2430]')}
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.35, ease: "easeOut" }}
     >
-      <div className="w-full pb-20">
+      <div className={cn('w-full', 'pb-20')}>
         {/* Top header nav */}
-        <header className="sticky top-0 z-20 bg-white/95 backdrop-blur shadow-sm border-b border-[#f4d6df]">
-          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between px-4 sm:px-6 lg:px-8 py-3 max-w-7xl mx-auto">
-            <div className="flex items-center gap-3">
-              <div className="h-9 w-9 rounded-full bg-[#f1557a] text-white flex items-center justify-center text-sm font-semibold shadow-sm">
+        <header className={cn('sticky', 'top-0', 'z-20', 'bg-white/95', 'backdrop-blur', 'shadow-sm', 'border-b', 'border-[#f4d6df]')}>
+          <div className={cn('flex', 'flex-col', 'gap-3', 'sm:flex-row', 'sm:items-center', 'sm:justify-between', 'px-4', 'sm:px-6', 'lg:px-8', 'py-3', 'max-w-7xl', 'mx-auto')}>
+            <div className={cn('flex', 'items-center', 'gap-3')}>
+              <div className={cn('h-9', 'w-9', 'rounded-full', 'bg-[#f1557a]', 'text-white', 'flex', 'items-center', 'justify-center', 'text-sm', 'font-semibold', 'shadow-sm')}>
                 M
               </div>
               <div>
-                <p className="text-sm font-semibold text-[#3b2430]">
+                <p className={cn('text-sm', 'font-semibold', 'text-[#3b2430]')}>
                   MatrimonyOne
                 </p>
-                <p className="text-[11px] text-[#c26b83]">
+                <p className={cn('text-[11px]', 'text-[#c26b83]')}>
                   Matrimony public profile
                 </p>
               </div>
             </div>
-            <div className="flex items-center justify-between sm:justify-end w-full sm:w-auto gap-3">
+            <div className={cn('flex', 'items-center', 'justify-between', 'sm:justify-end', 'w-full', 'sm:w-auto', 'gap-3')}>
               {/* Desktop nav */}
-              <nav className="hidden sm:flex items-center gap-8 text-xs font-medium text-[#7f4c5f]">
+              <nav className={cn('hidden', 'sm:flex', 'items-center', 'gap-8', 'text-xs', 'font-medium', 'text-[#7f4c5f]')}>
                 {showAboutSection && (
                   <button
                     type="button"
@@ -1187,7 +1199,7 @@ export const PublicMatrimonyProfile: React.FC<PublicMatrimonyProfileProps> = ({
               </nav>
 
               {/* Mobile: menu toggle + primary action */}
-              <div className="flex items-center gap-2 sm:gap-3">
+              <div className={cn('flex', 'items-center', 'gap-2', 'sm:gap-3')}>
                 {/* {isFeedView && (
                   <NotificationBell
                     onClick={() => setShowNotifications(true)}
@@ -1200,7 +1212,7 @@ export const PublicMatrimonyProfile: React.FC<PublicMatrimonyProfileProps> = ({
                       isFeedView ? "section-contact" : "section-additionalNote",
                     )
                   }
-                  className="inline-flex items-center justify-center rounded-full bg-gradient-to-r from-[#ff5b7b] to-[#ff3366] px-4 sm:px-5 py-2 text-[11px] sm:text-xs font-semibold text-white shadow-md hover:brightness-105"
+                  className={cn('inline-flex', 'items-center', 'justify-center', 'rounded-full', 'bg-gradient-to-r', 'from-[#ff5b7b]', 'to-[#ff3366]', 'px-4', 'sm:px-5', 'py-2', 'text-[11px]', 'sm:text-xs', 'font-semibold', 'text-white', 'shadow-md', 'hover:brightness-105')}
                 >
                   Connect Now
                 </button>
@@ -1212,7 +1224,7 @@ export const PublicMatrimonyProfile: React.FC<PublicMatrimonyProfileProps> = ({
                 >
                   <button
                     type="button"
-                    className="underline decoration-dotted hover:text-[#3b2430]"
+                    className={cn('underline', 'decoration-dotted', 'hover:text-[#3b2430]')}
                     disabled={isReporting}
                     onClick={async () => {
                       if (!profile) return;
@@ -1272,7 +1284,7 @@ export const PublicMatrimonyProfile: React.FC<PublicMatrimonyProfileProps> = ({
                   </button>
                   <button
                     type="button"
-                    className="underline decoration-dotted hover:text-[#3b2430]"
+                    className={cn('underline', 'decoration-dotted', 'hover:text-[#3b2430]')}
                     disabled={isBlocking}
                     onClick={async () => {
                       if (!profile || typeof profile.userId !== "string") {
@@ -1313,7 +1325,7 @@ export const PublicMatrimonyProfile: React.FC<PublicMatrimonyProfileProps> = ({
                   </button>
                   <button
                     type="button"
-                    className="underline decoration-dotted hover:text-[#3b2430]"
+                    className={cn('underline', 'decoration-dotted', 'hover:text-[#3b2430]')}
                     disabled={isBlocking}
                     onClick={async () => {
                       if (!profile || typeof profile.userId !== "string") {
@@ -1358,14 +1370,14 @@ export const PublicMatrimonyProfile: React.FC<PublicMatrimonyProfileProps> = ({
 
                 <button
                   type="button"
-                  className="inline-flex items-center justify-center rounded-full border border-[#f4d6df] bg-white p-1.5 text-[#7f4c5f] shadow-sm sm:hidden"
+                  className={cn('inline-flex', 'items-center', 'justify-center', 'rounded-full', 'border', 'border-[#f4d6df]', 'bg-white', 'p-1.5', 'text-[#7f4c5f]', 'shadow-sm', 'sm:hidden')}
                   onClick={() => setIsHeaderMenuOpen((prev) => !prev)}
                   aria-label={isHeaderMenuOpen ? "Close menu" : "Open menu"}
                 >
                   {isHeaderMenuOpen ? (
-                    <X className="h-4 w-4" />
+                    <X className={cn('h-4', 'w-4')} />
                   ) : (
-                    <Menu className="h-4 w-4" />
+                    <Menu className={cn('h-4', 'w-4')} />
                   )}
                 </button>
               </div>
@@ -1373,7 +1385,7 @@ export const PublicMatrimonyProfile: React.FC<PublicMatrimonyProfileProps> = ({
           </div>
 
           {(blockMessage || reportMessage) && (
-            <div className="px-4 sm:px-10 lg:px-20 pb-2 text-[11px] text-[#7f4c5f]">
+            <div className={cn('px-4', 'sm:px-10', 'lg:px-20', 'pb-2', 'text-[11px]', 'text-[#7f4c5f]')}>
               {blockMessage && <p>{blockMessage}</p>}
               {reportMessage && <p>{reportMessage}</p>}
             </div>
@@ -1381,15 +1393,15 @@ export const PublicMatrimonyProfile: React.FC<PublicMatrimonyProfileProps> = ({
 
           {/* Mobile dropdown nav */}
           {isHeaderMenuOpen && (
-            <div className="sm:hidden border-t border-[#f4d6df] bg-white/98">
-              <div className="px-4 py-2 flex flex-wrap gap-2 text-[11px] font-medium text-[#7f4c5f]">
+            <div className={cn('sm:hidden', 'border-t', 'border-[#f4d6df]', 'bg-white/98')}>
+              <div className={cn('px-4', 'py-2', 'flex', 'flex-wrap', 'gap-2', 'text-[11px]', 'font-medium', 'text-[#7f4c5f]')}>
                 <button
                   type="button"
                   onClick={() => {
                     scrollToSection("section-about");
                     setIsHeaderMenuOpen(false);
                   }}
-                  className="px-2 py-1 rounded-full bg-[#ffeef3] hover:bg-[#ffdce8]"
+                  className={cn('px-2', 'py-1', 'rounded-full', 'bg-[#ffeef3]', 'hover:bg-[#ffdce8]')}
                 >
                   About
                 </button>
@@ -1399,7 +1411,7 @@ export const PublicMatrimonyProfile: React.FC<PublicMatrimonyProfileProps> = ({
                     scrollToSection("section-details");
                     setIsHeaderMenuOpen(false);
                   }}
-                  className="px-2 py-1 rounded-full bg-[#ffeef3] hover:bg-[#ffdce8]"
+                  className={cn('px-2', 'py-1', 'rounded-full', 'bg-[#ffeef3]', 'hover:bg-[#ffdce8]')}
                 >
                   Details
                 </button>
@@ -1409,7 +1421,7 @@ export const PublicMatrimonyProfile: React.FC<PublicMatrimonyProfileProps> = ({
                     scrollToSection("section-physical");
                     setIsHeaderMenuOpen(false);
                   }}
-                  className="px-2 py-1 rounded-full bg-[#ffeef3] hover:bg-[#ffdce8]"
+                  className={cn('px-2', 'py-1', 'rounded-full', 'bg-[#ffeef3]', 'hover:bg-[#ffdce8]')}
                 >
                   Physical
                 </button>
@@ -1419,7 +1431,7 @@ export const PublicMatrimonyProfile: React.FC<PublicMatrimonyProfileProps> = ({
                     scrollToSection("section-education");
                     setIsHeaderMenuOpen(false);
                   }}
-                  className="px-2 py-1 rounded-full bg-[#ffeef3] hover:bg-[#ffdce8]"
+                  className={cn('px-2', 'py-1', 'rounded-full', 'bg-[#ffeef3]', 'hover:bg-[#ffdce8]')}
                 >
                   Education
                 </button>
@@ -1429,7 +1441,7 @@ export const PublicMatrimonyProfile: React.FC<PublicMatrimonyProfileProps> = ({
                     scrollToSection("section-profesion");
                     setIsHeaderMenuOpen(false);
                   }}
-                  className="px-2 py-1 rounded-full bg-[#ffeef3] hover:bg-[#ffdce8]"
+                  className={cn('px-2', 'py-1', 'rounded-full', 'bg-[#ffeef3]', 'hover:bg-[#ffdce8]')}
                 >
                   Profession
                 </button>
@@ -1439,7 +1451,7 @@ export const PublicMatrimonyProfile: React.FC<PublicMatrimonyProfileProps> = ({
                     scrollToSection("section-lifestyle");
                     setIsHeaderMenuOpen(false);
                   }}
-                  className="px-2 py-1 rounded-full bg-[#ffeef3] hover:bg-[#ffdce8]"
+                  className={cn('px-2', 'py-1', 'rounded-full', 'bg-[#ffeef3]', 'hover:bg-[#ffdce8]')}
                 >
                   Lifestyle
                 </button>
@@ -1449,7 +1461,7 @@ export const PublicMatrimonyProfile: React.FC<PublicMatrimonyProfileProps> = ({
                     scrollToSection("section-partner");
                     setIsHeaderMenuOpen(false);
                   }}
-                  className="px-2 py-1 rounded-full bg-[#ffeef3] hover:bg-[#ffdce8]"
+                  className={cn('px-2', 'py-1', 'rounded-full', 'bg-[#ffeef3]', 'hover:bg-[#ffdce8]')}
                 >
                   Partner
                 </button>
@@ -1459,7 +1471,7 @@ export const PublicMatrimonyProfile: React.FC<PublicMatrimonyProfileProps> = ({
                     scrollToSection("section-family");
                     setIsHeaderMenuOpen(false);
                   }}
-                  className="px-2 py-1 rounded-full bg-[#ffeef3] hover:bg-[#ffdce8]"
+                  className={cn('px-2', 'py-1', 'rounded-full', 'bg-[#ffeef3]', 'hover:bg-[#ffdce8]')}
                 >
                   Family
                 </button>
@@ -1469,7 +1481,7 @@ export const PublicMatrimonyProfile: React.FC<PublicMatrimonyProfileProps> = ({
                     scrollToSection("section-religion-community-gotra");
                     setIsHeaderMenuOpen(false);
                   }}
-                  className="px-2 py-1 rounded-full bg-[#ffeef3] hover:bg-[#ffdce8]"
+                  className={cn('px-2', 'py-1', 'rounded-full', 'bg-[#ffeef3]', 'hover:bg-[#ffdce8]')}
                 >
                   Religion
                 </button>
@@ -1479,7 +1491,7 @@ export const PublicMatrimonyProfile: React.FC<PublicMatrimonyProfileProps> = ({
                     scrollToSection("section-kundli-astro");
                     setIsHeaderMenuOpen(false);
                   }}
-                  className="px-2 py-1 rounded-full bg-[#ffeef3] hover:bg-[#ffdce8]"
+                  className={cn('px-2', 'py-1', 'rounded-full', 'bg-[#ffeef3]', 'hover:bg-[#ffdce8]')}
                 >
                   Kundli
                 </button>
@@ -1489,7 +1501,7 @@ export const PublicMatrimonyProfile: React.FC<PublicMatrimonyProfileProps> = ({
                     scrollToSection("section-additionalNote");
                     setIsHeaderMenuOpen(false);
                   }}
-                  className="px-2 py-1 rounded-full bg-[#ffeef3] hover:bg-[#ffdce8]"
+                  className={cn('px-2', 'py-1', 'rounded-full', 'bg-[#ffeef3]', 'hover:bg-[#ffdce8]')}
                 >
                   Additional Note
                 </button>
@@ -1499,18 +1511,18 @@ export const PublicMatrimonyProfile: React.FC<PublicMatrimonyProfileProps> = ({
         </header>
 
         {/* Hero section */}
-        <div className="mt-0 w-full overflow-hidden bg-gradient-to-r from-[#f1697f] via-[#f58b7c] to-[#f7b46b] relative">
+        <div className={cn('mt-0', 'w-full', 'overflow-hidden', 'bg-gradient-to-r', 'from-[#f1697f]', 'via-[#f58b7c]', 'to-[#f7b46b]', 'relative')}>
           {heroPreviewPhoto && (
             <img
               src={heroPreviewPhoto.url}
               alt={heroPreviewPhoto.caption || "Profile background"}
-              className="absolute inset-0 h-full w-full object-cover opacity-90 blur-lg scale-110"
+              className={cn('absolute', 'inset-0', 'h-full', 'w-full', 'object-cover', 'opacity-90', 'blur-lg', 'scale-110')}
             />
           )}
           {/* Top dark overlay for readability */}
-          <div className="pointer-events-none absolute inset-0 bg-gradient-to-b from-black/60 via-black/30 to-transparent" />
+          <div className={cn('pointer-events-none', 'absolute', 'inset-0', 'bg-gradient-to-b', 'from-black/60', 'via-black/30', 'to-transparent')} />
           {/* Bottom fade into page background */}
-          <div className="pointer-events-none absolute inset-x-0 bottom-0 h-40 bg-gradient-to-b from-transparent to-[#ffe5ee]" />
+          <div className={cn('pointer-events-none', 'absolute', 'inset-x-0', 'bottom-0', 'h-40', 'bg-gradient-to-b', 'from-transparent', 'to-[#ffe5ee]')} />
 
           {/* Hidden QR container used only for download (not needed in feed view) */}
           {profileUrl && !isFeedView && (
@@ -1521,23 +1533,23 @@ export const PublicMatrimonyProfile: React.FC<PublicMatrimonyProfileProps> = ({
             </div>
           )}
 
-          <div className="relative px-4 sm:px-10 lg:px-16 py-14 sm:py-16 text-white">
-            <div className="mx-auto max-w-5xl flex flex-col md:flex-row md:items-center md:justify-between gap-10">
+          <div className={cn('relative', 'px-4', 'sm:px-10', 'lg:px-16', 'py-14', 'sm:py-16', 'text-white')}>
+            <div className={cn('mx-auto', 'max-w-5xl', 'flex', 'flex-col', 'md:flex-row', 'md:items-center', 'md:justify-between', 'gap-10')}>
               {profileUrl && (
-                <div className="flex justify-center md:justify-start">
+                <div className={cn('flex', 'justify-center', 'md:justify-start')}>
                   {isFeedView ? (
                     primaryPhoto ? (
-                      <div className="h-40 w-40 sm:h-44 sm:w-44 lg:h-48 lg:w-48 rounded-full bg-white/25 backdrop-blur-md shadow-2xl overflow-hidden p-2">
-                        <div className="h-full w-full rounded-full overflow-hidden ring-[6px] ring-white/90 shadow-xl bg-rose-50">
+                      <div className={cn('h-40', 'w-40', 'sm:h-44', 'sm:w-44', 'lg:h-48', 'lg:w-48', 'rounded-full', 'bg-white/25', 'backdrop-blur-md', 'shadow-2xl', 'overflow-hidden', 'p-2')}>
+                        <div className={cn('h-full', 'w-full', 'rounded-full', 'overflow-hidden', 'ring-[6px]', 'ring-white/90', 'shadow-xl', 'bg-rose-50')}>
                           <img
                             src={primaryPhoto.url}
                             alt={primaryPhoto.caption || "Profile photo"}
-                            className="h-full w-full object-cover"
+                            className={cn('h-full', 'w-full', 'object-cover')}
                           />
                         </div>
                       </div>
                     ) : (
-                      <div className="h-40 w-40 sm:h-44 sm:w-44 lg:h-48 lg:w-48 rounded-full bg-white/20 shadow-2xl flex items-center justify-center text-sm font-semibold">
+                      <div className={cn('h-40', 'w-40', 'sm:h-44', 'sm:w-44', 'lg:h-48', 'lg:w-48', 'rounded-full', 'bg-white/20', 'shadow-2xl', 'flex', 'items-center', 'justify-center', 'text-sm', 'font-semibold')}>
                         <span>{about.profileManagedBy || "Profile"}</span>
                       </div>
                     )
@@ -1549,21 +1561,21 @@ export const PublicMatrimonyProfile: React.FC<PublicMatrimonyProfileProps> = ({
                           setIsHeroQrFront((prev) => !prev);
                         }
                       }}
-                      className="group relative h-40 w-40 sm:h-44 sm:w-44 lg:h-48 lg:w-48 rounded-full bg-white shadow-2xl flex items-center justify-center overflow-hidden [perspective:1200px] cursor-pointer"
+                      className={cn('group', 'relative', 'h-40', 'w-40', 'sm:h-44', 'sm:w-44', 'lg:h-48', 'lg:w-48', 'rounded-full', 'bg-white', 'shadow-2xl', 'flex', 'items-center', 'justify-center', 'overflow-hidden', '[perspective:1200px]', 'cursor-pointer')}
                       aria-label={
                         isHeroQrFront ? "Show profile photo" : "Show QR code"
                       }
                     >
                       {/* Front: QR code (default, scannable) */}
                       <div
-                        className="absolute inset-0 flex items-center justify-center transition-transform duration-500 [backface-visibility:hidden] [transform-style:preserve-3d]"
+                        className={cn('absolute', 'inset-0', 'flex', 'items-center', 'justify-center', 'transition-transform', 'duration-500', '[backface-visibility:hidden]', '[transform-style:preserve-3d]')}
                         style={{
                           transform: isHeroQrFront
                             ? "rotateY(0deg)"
                             : "rotateY(180deg)",
                         }}
                       >
-                        <div className="rounded-2xl text-rose-500 bg-white/95 px-3 py-3 shadow-sm">
+                        <div className={cn('rounded-2xl', 'text-rose-500', 'bg-white/95', 'px-3', 'py-3', 'shadow-sm')}>
                           <QRCode value={profileUrl} size={104} />
                         </div>
                       </div>
@@ -1571,27 +1583,27 @@ export const PublicMatrimonyProfile: React.FC<PublicMatrimonyProfileProps> = ({
                       {/* Back: profile photo */}
                       {primaryPhoto && (
                         <div
-                          className="absolute inset-0 flex items-center justify-center transition-transform duration-500 [backface-visibility:hidden] [transform-style:preserve-3d]"
+                          className={cn('absolute', 'inset-0', 'flex', 'items-center', 'justify-center', 'transition-transform', 'duration-500', '[backface-visibility:hidden]', '[transform-style:preserve-3d]')}
                           style={{
                             transform: isHeroQrFront
                               ? "rotateY(-180deg)"
                               : "rotateY(0deg)",
                           }}
                         >
-                          <div className="h-full w-full p-2">
-                            <div className="h-full w-full rounded-full overflow-hidden ring-[6px] ring-white/90 shadow-xl bg-rose-50">
+                          <div className={cn('h-full', 'w-full', 'p-2')}>
+                            <div className={cn('h-full', 'w-full', 'rounded-full', 'overflow-hidden', 'ring-[6px]', 'ring-white/90', 'shadow-xl', 'bg-rose-50')}>
                               <img
                                 src={primaryPhoto.url}
                                 alt={primaryPhoto.caption || "Profile photo"}
-                                className="h-full w-full object-cover"
+                                className={cn('h-full', 'w-full', 'object-cover')}
                               />
                             </div>
                           </div>
                         </div>
                       )}
 
-                      <div className="absolute inset-0 flex items-end justify-center pointer-events-none">
-                        <div className="mb-10 rounded-full bg-black/55 px-2 py-0.5 text-[9px] sm:text-xs font-medium tracking-wide opacity-0 transition-opacity duration-200 group-hover:opacity-100">
+                      <div className={cn('absolute', 'inset-0', 'flex', 'items-end', 'justify-center', 'pointer-events-none')}>
+                        <div className={cn('mb-10', 'rounded-full', 'bg-black/55', 'px-2', 'py-0.5', 'text-[9px]', 'sm:text-xs', 'font-medium', 'tracking-wide', 'opacity-0', 'transition-opacity', 'duration-200', 'group-hover:opacity-100')}>
                           {isHeroQrFront
                             ? "Tap to view Profile"
                             : "Tap to view QR code"}
@@ -1602,38 +1614,38 @@ export const PublicMatrimonyProfile: React.FC<PublicMatrimonyProfileProps> = ({
                 </div>
               )}
 
-              <div className="flex-1 text-center md:text-left">
-                <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
-                  <div className="max-w-3xl mx-auto md:mx-0">
-                    <div className="flex flex-wrap items-center justify-center md:justify-start gap-2">
-                      <p className="text-xs font-semibold text-rose-600">
+              <div className={cn('flex-1', 'text-center', 'md:text-left')}>
+                <div className={cn('flex', 'flex-col', 'gap-3', 'md:flex-row', 'md:items-start', 'md:justify-between')}>
+                  <div className={cn('max-w-3xl', 'mx-auto', 'md:mx-0')}>
+                    <div className={cn('flex', 'flex-wrap', 'items-center', 'justify-center', 'md:justify-start', 'gap-2')}>
+                      <p className={cn('text-xs', 'font-semibold', 'text-rose-600')}>
                         {about.profileManagedBy || "Matrimony Profile"}
                       </p>
                       {String(
                         (profile as any)?.kycStatus || "NOT_VERIFIED",
                       ).toUpperCase() === "VERIFIED" ? (
-                        <RiVerifiedBadgeFill className="shrink-0 text-rose-600" />
+                        <RiVerifiedBadgeFill className={cn('shrink-0', 'text-rose-600')} />
                       ) : null}
                     </div>
                     {displayProfileId && (
-                      <p className="mt-1 text-[11px] sm:text-xs text-rose-100">
+                      <p className={cn('mt-1', 'text-[11px]', 'sm:text-xs', 'text-rose-100')}>
                         ID - {displayProfileId}
                       </p>
                     )}
                     {(age || headerAddress) && (
-                      <p className="mt-1 text-[11px] sm:text-xs text-rose-100/90">
+                      <p className={cn('mt-1', 'text-[11px]', 'sm:text-xs', 'text-rose-100/90')}>
                         {[age ? `${age} yrs` : "", headerAddress]
                           .filter(Boolean)
                           .join(" • ")}
                       </p>
                     )}
                     {full.headline && (
-                      <p className="mt-3 text-xs sm:text-sm text-rose-50">
+                      <p className={cn('mt-3', 'text-xs', 'sm:text-sm', 'text-rose-50')}>
                         {full.headline}
                       </p>
                     )}
                   </div>
-                  <div className="flex items-center gap-2 self-center md:self-start">
+                  <div className={cn('flex', 'items-center', 'gap-2', 'self-center', 'md:self-start')}>
                     {isFeedView && (
                       <button
                         type="button"
@@ -1650,7 +1662,7 @@ export const PublicMatrimonyProfile: React.FC<PublicMatrimonyProfileProps> = ({
                             : "Public link unavailable right now"
                         }
                       >
-                        <Link className="h-3 w-3" />
+                        <Link className={cn('h-3', 'w-3')} />
                         <span>Copy link</span>
                       </button>
                     )}
@@ -1669,20 +1681,20 @@ export const PublicMatrimonyProfile: React.FC<PublicMatrimonyProfileProps> = ({
                           : "Add photos in Gallery tab to preview images"
                       }
                     >
-                      <ImageIcon className="h-3.5 w-3.5" />
+                      <ImageIcon className={cn('h-3.5', 'w-3.5')} />
                       <span>Photos</span>
                     </button>
                   </div>
                 </div>
 
-                <div className="mt-4 flex flex-wrap items-center justify-center md:justify-start gap-3">
+                <div className={cn('mt-4', 'flex', 'flex-wrap', 'items-center', 'justify-center', 'md:justify-start', 'gap-3')}>
                   {profileUrl && !isFeedView && (
                     <button
                       type="button"
                       onClick={handleDownloadQr}
-                      className="inline-flex items-center gap-1.5 rounded-full bg-white px-4 py-1.5 text-[11px] font-medium text-[#c0395b] shadow-sm hover:bg-rose-50"
+                      className={cn('inline-flex', 'items-center', 'gap-1.5', 'rounded-full', 'bg-white', 'px-4', 'py-1.5', 'text-[11px]', 'font-medium', 'text-[#c0395b]', 'shadow-sm', 'hover:bg-rose-50')}
                     >
-                      <QrCode className="h-3.5 w-3.5" />
+                      <QrCode className={cn('h-3.5', 'w-3.5')} />
                       <span>Download QR</span>
                     </button>
                   )}
@@ -1690,9 +1702,9 @@ export const PublicMatrimonyProfile: React.FC<PublicMatrimonyProfileProps> = ({
                     <button
                       type="button"
                       onClick={handleDownloadPdf}
-                      className="inline-flex items-center gap-1.5 rounded-full bg-white px-4 py-1.5 text-[11px] font-medium text-[#c0395b] shadow-sm hover:bg-rose-50"
+                      className={cn('inline-flex', 'items-center', 'gap-1.5', 'rounded-full', 'bg-white', 'px-4', 'py-1.5', 'text-[11px]', 'font-medium', 'text-[#c0395b]', 'shadow-sm', 'hover:bg-rose-50')}
                     >
-                      <Sparkles className="h-3.5 w-3.5" />
+                      <Sparkles className={cn('h-3.5', 'w-3.5')} />
                       <span>Download PDF</span>
                     </button>
                   )}
@@ -1700,9 +1712,9 @@ export const PublicMatrimonyProfile: React.FC<PublicMatrimonyProfileProps> = ({
                     <button
                       type="button"
                       onClick={handleShareProfile}
-                      className="inline-flex items-center gap-1.5 rounded-full bg-white px-4 py-1.5 text-[11px] font-medium text-[#c0395b] shadow-sm hover:bg-rose-50"
+                      className={cn('inline-flex', 'items-center', 'gap-1.5', 'rounded-full', 'bg-white', 'px-4', 'py-1.5', 'text-[11px]', 'font-medium', 'text-[#c0395b]', 'shadow-sm', 'hover:bg-rose-50')}
                     >
-                      <Sparkles className="h-3.5 w-3.5" />
+                      <Sparkles className={cn('h-3.5', 'w-3.5')} />
                       <span>Share Profile</span>
                     </button>
                   )}
@@ -1710,9 +1722,9 @@ export const PublicMatrimonyProfile: React.FC<PublicMatrimonyProfileProps> = ({
                     <button
                       type="button"
                       onClick={handleCopyLink}
-                      className="inline-flex items-center gap-1.5 rounded-full bg-white px-4 py-1.5 text-[11px] font-medium text-[#c0395b] shadow-sm hover:bg-rose-50"
+                      className={cn('inline-flex', 'items-center', 'gap-1.5', 'rounded-full', 'bg-white', 'px-4', 'py-1.5', 'text-[11px]', 'font-medium', 'text-[#c0395b]', 'shadow-sm', 'hover:bg-rose-50')}
                     >
-                      <Link className="h-3.5 w-3.5" />
+                      <Link className={cn('h-3.5', 'w-3.5')} />
                       <span>Copy Link</span>
                     </button>
                   )}
@@ -1727,15 +1739,15 @@ export const PublicMatrimonyProfile: React.FC<PublicMatrimonyProfileProps> = ({
         {showAboutSection && (
           <section
             id="section-about"
-            className="mt-8 flex justify-center px-4 sm:px-6 lg:px-0"
+            className={cn('mt-8', 'flex', 'justify-center', 'px-4', 'sm:px-6', 'lg:px-0')}
           >
-            <div className="w-full max-w-5xl rounded-xl bg-white shadow-[0_18px_45px_rgba(0,0,0,0.06)] border border-[#f4d6df] overflow-hidden ">
-              <div className="h-[3px]  bg-gradient-to-r from-[#f37488] via-[#f9a37f] to-[#f6c88a]" />
-              <div className="px-6  sm:px-10 py-6 sm:py-8 text-center space-y-10">
-                <p className="text-sm sm:text-base font-medium text-[#c0395b] italic">
+            <div className={cn('w-full', 'max-w-5xl', 'rounded-xl', 'bg-white', 'shadow-[0_18px_45px_rgba(0,0,0,0.06)]', 'border', 'border-[#f4d6df]', 'overflow-hidden')}>
+              <div className={cn('h-[3px]', 'bg-gradient-to-r', 'from-[#f37488]', 'via-[#f9a37f]', 'to-[#f6c88a]')} />
+              <div className={cn('px-6', 'sm:px-10', 'py-6', 'sm:py-8', 'text-center', 'space-y-10')}>
+                <p className={cn('text-sm', 'sm:text-base', 'font-medium', 'text-[#c0395b]', 'italic')}>
                   About me
                 </p>
-                <p className="text-sm leading-relaxed text-[#4b313e] whitespace-pre-line">
+                <p className={cn('text-sm', 'leading-relaxed', 'text-[#4b313e]', 'whitespace-pre-line')}>
                   {about.summary}
                 </p>
               </div>
@@ -1747,50 +1759,50 @@ export const PublicMatrimonyProfile: React.FC<PublicMatrimonyProfileProps> = ({
         {showDetailsSection && (
           <section
             id="section-details"
-            className="mt-8 max-w-5xl mx-auto grid gap-6 lg:grid-cols-[2fr_1fr] items-start px-4 sm:px-6 lg:px-0"
+            className={cn('mt-8', 'max-w-5xl', 'mx-auto', 'grid', 'gap-6', 'lg:grid-cols-[2fr_1fr]', 'items-start', 'px-4', 'sm:px-6', 'lg:px-0')}
           >
             {/* Left column: details */}
             <div className="space-y-6">
               {/* Basic Details */}
-              <section className="rounded-lg bg-white px-5 py-5 sm:px-6 sm:py-6 shadow-sm border border-rose-100">
-                <div className="flex items-center gap-2 py-3 mb-4 -mx-5 -mt-6 -ml-6 -mr-6 px-5  rounded-lg bg-[#ffeef3] border-b border-rose-100">
-                  <div className="h-7 w-7 rounded-full bg-rose-100 flex items-center justify-center">
-                    <User2 className="w-3.5 h-3.5 text-rose-500" />
+              <section className={cn('rounded-lg', 'bg-white', 'px-5', 'py-5', 'sm:px-6', 'sm:py-6', 'shadow-sm', 'border', 'border-rose-100')}>
+                <div className={cn('flex', 'items-center', 'gap-2', 'py-3', 'mb-4', '-mx-5', '-mt-6', '-ml-6', '-mr-6', 'px-5', 'rounded-lg', 'bg-[#ffeef3]', 'border-b', 'border-rose-100')}>
+                  <div className={cn('h-7', 'w-7', 'rounded-full', 'bg-rose-100', 'flex', 'items-center', 'justify-center')}>
+                    <User2 className={cn('w-3.5', 'h-3.5', 'text-rose-500')} />
                   </div>
-                  <p className="text-sm font-semibold text-rose-900">
+                  <p className={cn('text-sm', 'font-semibold', 'text-rose-900')}>
                     Basic Details
                   </p>
                 </div>
-                <div className="grid gap-3 sm:grid-cols-2">
+                <div className={cn('grid', 'gap-3', 'sm:grid-cols-2')}>
                   <InfoTile
                     label="Name"
                     value={about.profileManagedBy as string}
-                    icon={<User className="h-4 w-4" />}
+                    icon={<User className={cn('h-4', 'w-4')} />}
                   />
                   <InfoTile
                     label="Birth date"
                     value={formatDateOnly(basic.birthDate) as string}
-                    icon={<Calendar className="h-4 w-4" />}
+                    icon={<Calendar className={cn('h-4', 'w-4')} />}
                   />
                   <InfoTile
                     label="Age"
                     value={age ? `${age} yrs` : ""}
-                    icon={<Users className="h-4 w-4" />}
+                    icon={<Users className={cn('h-4', 'w-4')} />}
                   />
                   <InfoTile
                     label="Profile created by"
                     value={(about as any).profileCreatedBy as string}
-                    icon={<UserIcon className="h-4 w-4" />}
+                    icon={<UserIcon className={cn('h-4', 'w-4')} />}
                   />
                   <InfoTile
                     label="Marital status"
                     value={basic.maritalStatus}
-                    icon={<Handshake className="h-4 w-4" />}
+                    icon={<Handshake className={cn('h-4', 'w-4')} />}
                   />
                   <InfoTile
                     label="Gender"
                     value={basic.gender as string}
-                    icon={<Users className="h-4 w-4" />}
+                    icon={<Users className={cn('h-4', 'w-4')} />}
                   />
                 </div>
               </section>
@@ -1799,46 +1811,46 @@ export const PublicMatrimonyProfile: React.FC<PublicMatrimonyProfileProps> = ({
               {showPhysicalSection && (
                 <section
                   id="section-physical"
-                  className="rounded-lg bg-white px-5 py-5 sm:px-6 sm:py-6 shadow-sm border border-rose-100"
+                  className={cn('rounded-lg', 'bg-white', 'px-5', 'py-5', 'sm:px-6', 'sm:py-6', 'shadow-sm', 'border', 'border-rose-100')}
                 >
-                  <div className="flex items-center gap-2 mb-4 mx-5 -mt-6 -ml-6 -mr-6 px-5  rounded-lg px-5 py-3 bg-[#ffeef3] border-b border-rose-100">
-                    <div className="h-7 w-7 rounded-full bg-rose-100 flex items-center justify-center">
-                      <Ruler className="w-3.5 h-3.5 text-rose-600" />
+                  <div className={cn('flex', 'items-center', 'gap-2', 'mb-4', 'mx-5', '-mt-6', '-ml-6', '-mr-6', 'px-5', 'rounded-lg', 'px-5', 'py-3', 'bg-[#ffeef3]', 'border-b', 'border-rose-100')}>
+                    <div className={cn('h-7', 'w-7', 'rounded-full', 'bg-rose-100', 'flex', 'items-center', 'justify-center')}>
+                      <Ruler className={cn('w-3.5', 'h-3.5', 'text-rose-600')} />
                     </div>
-                    <p className="text-sm font-semibold text-rose-900">
+                    <p className={cn('text-sm', 'font-semibold', 'text-rose-900')}>
                       Physical Information
                     </p>
                   </div>
-                  <div className="grid gap-3 sm:grid-cols-2">
+                  <div className={cn('grid', 'gap-3', 'sm:grid-cols-2')}>
                     <InfoTile
                       label="Height"
                       value={basic.height}
-                      icon={<Ruler className="h-4 w-4" />}
+                      icon={<Ruler className={cn('h-4', 'w-4')} />}
                     />
                     <InfoTile
                       label="Weight"
                       value={(basic as any).weight as string}
-                      icon={<Weight className="h-4 w-4" />}
+                      icon={<Weight className={cn('h-4', 'w-4')} />}
                     />
                     <InfoTile
                       label="Body type"
                       value={(basic as any).bodyType as string}
-                      icon={<Footprints className="h-4 w-4" />}
+                      icon={<Footprints className={cn('h-4', 'w-4')} />}
                     />
                     <InfoTile
                       label="Complexion"
                       value={(basic as any).complexion as string}
-                      icon={<Palette className="h-4 w-4" />}
+                      icon={<Palette className={cn('h-4', 'w-4')} />}
                     />
                     <InfoTile
                       label="Blood group"
                       value={(basic as any).bloodGroup as string}
-                      icon={<Syringe className="h-4 w-4" />}
+                      icon={<Syringe className={cn('h-4', 'w-4')} />}
                     />
                     <InfoTile
                       label="Physical status"
                       value={basic.physicalStatus}
-                      icon={<ClipboardList className="h-4 w-4" />}
+                      icon={<ClipboardList className={cn('h-4', 'w-4')} />}
                     />
                   </div>
                 </section>
@@ -1848,46 +1860,46 @@ export const PublicMatrimonyProfile: React.FC<PublicMatrimonyProfileProps> = ({
               {showEducationSection && (
                 <section
                   id="section-education"
-                  className="rounded-lg bg-white px-5 py-5 sm:px-6 sm:py-6 shadow-sm border border-rose-100"
+                  className={cn('rounded-lg', 'bg-white', 'px-5', 'py-5', 'sm:px-6', 'sm:py-6', 'shadow-sm', 'border', 'border-rose-100')}
                 >
-                  <div className="flex items-center gap-2 mb-4 -mx-5 -mt-6 -ml-6 -mr-6 px-5 py-3 rounded-lg bg-[#ffeef3] border-b border-rose-100">
-                    <div className="h-7 w-7 rounded-full bg-rose-100 flex items-center justify-center">
-                      <School className="w-3.5 h-3.5 text-rose-600" />
+                  <div className={cn('flex', 'items-center', 'gap-2', 'mb-4', '-mx-5', '-mt-6', '-ml-6', '-mr-6', 'px-5', 'py-3', 'rounded-lg', 'bg-[#ffeef3]', 'border-b', 'border-rose-100')}>
+                    <div className={cn('h-7', 'w-7', 'rounded-full', 'bg-rose-100', 'flex', 'items-center', 'justify-center')}>
+                      <School className={cn('w-3.5', 'h-3.5', 'text-rose-600')} />
                     </div>
-                    <p className="text-sm font-semibold text-rose-900">
+                    <p className={cn('text-sm', 'font-semibold', 'text-rose-900')}>
                       Education Details
                     </p>
                   </div>
-                  <div className="grid gap-3 sm:grid-cols-2">
+                  <div className={cn('grid', 'gap-3', 'sm:grid-cols-2')}>
                     <InfoTile
                       label="Highest education"
                       value={education.description as string}
-                      icon={<Laptop className="h-4 w-4" />}
+                      icon={<Laptop className={cn('h-4', 'w-4')} />}
                     />
                     <InfoTile
                       label="Level"
                       value={education.level as string}
-                      icon={<GraduationCap className="h-4 w-4" />}
+                      icon={<GraduationCap className={cn('h-4', 'w-4')} />}
                     />
                     <InfoTile
                       label="Degree"
                       value={education.degree as string}
-                      icon={<GraduationCap className="h-4 w-4" />}
+                      icon={<GraduationCap className={cn('h-4', 'w-4')} />}
                     />
                     <InfoTile
                       label="Field"
                       value={education.field as string}
-                      icon={<Laptop className="h-4 w-4" />}
+                      icon={<Laptop className={cn('h-4', 'w-4')} />}
                     />
                     <InfoTile
                       label="College"
                       value={education.college as string}
-                      icon={<Building2 className="h-4 w-4" />}
+                      icon={<Building2 className={cn('h-4', 'w-4')} />}
                     />
                     <InfoTile
                       label="Year"
                       value={education.year as string}
-                      icon={<Calendar className="h-4 w-4" />}
+                      icon={<Calendar className={cn('h-4', 'w-4')} />}
                     />
                   </div>
                 </section>
@@ -1897,13 +1909,13 @@ export const PublicMatrimonyProfile: React.FC<PublicMatrimonyProfileProps> = ({
               {showProfessionSection && (
                 <section
                   id="section-profesion"
-                  className="rounded-lg bg-white px-5 py-5 sm:px-6 sm:py-6 shadow-sm border border-rose-100"
+                  className={cn('rounded-lg', 'bg-white', 'px-5', 'py-5', 'sm:px-6', 'sm:py-6', 'shadow-sm', 'border', 'border-rose-100')}
                 >
-                  <div className="flex items-center gap-2 mb-4 -mx-5 -mt-6 -ml-6 -mr-6 px-5 py-3 rounded-lg bg-[#ffeef3] border-b border-rose-100">
-                    <div className="h-7 w-7 rounded-full bg-rose-100 flex items-center justify-center">
-                      <Briefcase className="w-3.5 h-3.5 text-rose-600" />
+                  <div className={cn('flex', 'items-center', 'gap-2', 'mb-4', '-mx-5', '-mt-6', '-ml-6', '-mr-6', 'px-5', 'py-3', 'rounded-lg', 'bg-[#ffeef3]', 'border-b', 'border-rose-100')}>
+                    <div className={cn('h-7', 'w-7', 'rounded-full', 'bg-rose-100', 'flex', 'items-center', 'justify-center')}>
+                      <Briefcase className={cn('w-3.5', 'h-3.5', 'text-rose-600')} />
                     </div>
-                    <p className="text-sm font-semibold text-rose-900">
+                    <p className={cn('text-sm', 'font-semibold', 'text-rose-900')}>
                       Professional Details
                     </p>
                   </div>
@@ -1911,11 +1923,11 @@ export const PublicMatrimonyProfile: React.FC<PublicMatrimonyProfileProps> = ({
                   career.location ||
                   basic.annualIncome ||
                   career.industry ? (
-                    <div className="grid gap-3 sm:grid-cols-2">
+                    <div className={cn('grid', 'gap-3', 'sm:grid-cols-2')}>
                       <InfoTile
                         label="Occupation"
                         value={career.role}
-                        icon={<TrendingUp className="h-4 w-4" />}
+                        icon={<TrendingUp className={cn('h-4', 'w-4')} />}
                       />
                       <InfoTile
                         label="Employed in"
@@ -1923,21 +1935,21 @@ export const PublicMatrimonyProfile: React.FC<PublicMatrimonyProfileProps> = ({
                           ((career as any).industry ||
                             (career as any).employedIn) as string
                         }
-                        icon={<Building2 className="h-4 w-4" />}
+                        icon={<Building2 className={cn('h-4', 'w-4')} />}
                       />
                       <InfoTile
                         label="Annual income"
                         value={basic.annualIncome}
-                        icon={<IndianRupee className="h-4 w-4" />}
+                        icon={<IndianRupee className={cn('h-4', 'w-4')} />}
                       />
                       <InfoTile
                         label="Work location"
                         value={career.location}
-                        icon={<MapPin className="h-4 w-4" />}
+                        icon={<MapPin className={cn('h-4', 'w-4')} />}
                       />
                     </div>
                   ) : (
-                    <p className="text-sm text-slate-500">
+                    <p className={cn('text-sm', 'text-slate-500')}>
                       Career details not shared.
                     </p>
                   )}
@@ -1948,17 +1960,17 @@ export const PublicMatrimonyProfile: React.FC<PublicMatrimonyProfileProps> = ({
               {showLifestyleSection && (
                 <section
                   id="section-lifestyle"
-                  className="rounded-lg bg-white px-5 py-5 sm:px-6 sm:py-6 shadow-sm border border-rose-100"
+                  className={cn('rounded-lg', 'bg-white', 'px-5', 'py-5', 'sm:px-6', 'sm:py-6', 'shadow-sm', 'border', 'border-rose-100')}
                 >
-                  <div className="flex items-center gap-2 mb-4 -mx-5 -mt-6 -ml-6 -mr-6 px-5 py-3 rounded-lg bg-[#ffeef3] border-b border-rose-100">
-                    <div className="h-7 w-7 rounded-full bg-rose-100 flex items-center justify-center">
-                      <Film className="w-3.5 h-3.5 text-rose-600" />
+                  <div className={cn('flex', 'items-center', 'gap-2', 'mb-4', '-mx-5', '-mt-6', '-ml-6', '-mr-6', 'px-5', 'py-3', 'rounded-lg', 'bg-[#ffeef3]', 'border-b', 'border-rose-100')}>
+                    <div className={cn('h-7', 'w-7', 'rounded-full', 'bg-rose-100', 'flex', 'items-center', 'justify-center')}>
+                      <Film className={cn('w-3.5', 'h-3.5', 'text-rose-600')} />
                     </div>
-                    <p className="text-sm font-semibold text-rose-900">
+                    <p className={cn('text-sm', 'font-semibold', 'text-rose-900')}>
                       Lifestyle & Favourites
                     </p>
                   </div>
-                  <div className="grid gap-3 sm:grid-cols-2">
+                  <div className={cn('grid', 'gap-3', 'sm:grid-cols-2')}>
                     <InfoTile
                       label="Habits"
                       value={
@@ -1967,7 +1979,7 @@ export const PublicMatrimonyProfile: React.FC<PublicMatrimonyProfileProps> = ({
                           ? lifestyle.habits.join(", ")
                           : "") as string
                       }
-                      icon={<ClipboardList className="h-4 w-4" />}
+                      icon={<ClipboardList className={cn('h-4', 'w-4')} />}
                     />
                     <InfoTile
                       label="Assets"
@@ -1977,11 +1989,11 @@ export const PublicMatrimonyProfile: React.FC<PublicMatrimonyProfileProps> = ({
                           ? lifestyle.assets.join(", ")
                           : "") as string
                       }
-                      icon={<Home className="h-4 w-4" />}
+                      icon={<Home className={cn('h-4', 'w-4')} />}
                     />
                   </div>
                   <div className="mt-4">
-                    <div className="grid gap-3 sm:grid-cols-2">
+                    <div className={cn('grid', 'gap-3', 'sm:grid-cols-2')}>
                       {favouriteTiles.map((tile) => (
                         <InfoTile
                           key={tile.key as string}
@@ -1998,26 +2010,26 @@ export const PublicMatrimonyProfile: React.FC<PublicMatrimonyProfileProps> = ({
               {showPartnerSection && (
                 <section
                   id="section-partner"
-                  className="rounded-lg bg-white px-5 py-5 sm:px-6 sm:py-6 shadow-sm border border-rose-100"
+                  className={cn('rounded-lg', 'bg-white', 'px-5', 'py-5', 'sm:px-6', 'sm:py-6', 'shadow-sm', 'border', 'border-rose-100')}
                 >
-                  <div className="flex items-center gap-2 mb-3 -mx-5 -mt-6 -ml-6 -mr-6 px-5 py-3 rounded-lg bg-[#ffeef3] border-b border-rose-100">
-                    <div className="h-7 w-7 rounded-full bg-rose-100 flex items-center justify-center">
-                      <Search className="w-3.5 h-3.5 text-rose-600" />
+                  <div className={cn('flex', 'items-center', 'gap-2', 'mb-3', '-mx-5', '-mt-6', '-ml-6', '-mr-6', 'px-5', 'py-3', 'rounded-lg', 'bg-[#ffeef3]', 'border-b', 'border-rose-100')}>
+                    <div className={cn('h-7', 'w-7', 'rounded-full', 'bg-rose-100', 'flex', 'items-center', 'justify-center')}>
+                      <Search className={cn('w-3.5', 'h-3.5', 'text-rose-600')} />
                     </div>
-                    <p className="text-sm font-semibold text-rose-900">
+                    <p className={cn('text-sm', 'font-semibold', 'text-rose-900')}>
                       Partner Preferences
                     </p>
                   </div>
 
                   <section
                     id="section-partner"
-                    className="mt-8 flex justify-center px-4 sm:px-6 lg:px-0"
+                    className={cn('mt-8', 'flex', 'justify-center', 'px-4', 'sm:px-6', 'lg:px-0')}
                   >
-                    <div className="w-full max-w-5xl rounded-xl bg-white shadow-[0_18px_45px_rgba(0,0,0,0.06)] border border-[#f4d6df] overflow-hidden ">
-                      <div className="h-[3px]  bg-gradient-to-r from-[#f37488] via-[#f9a37f] to-[#f6c88a]" />
-                      <div className="px-6  sm:px-10 py-6 sm:py-8  mb-4 text-center space-y-10">
+                    <div className={cn('w-full', 'max-w-5xl', 'rounded-xl', 'bg-white', 'shadow-[0_18px_45px_rgba(0,0,0,0.06)]', 'border', 'border-[#f4d6df]', 'overflow-hidden')}>
+                      <div className={cn('h-[3px]', 'bg-gradient-to-r', 'from-[#f37488]', 'via-[#f9a37f]', 'to-[#f6c88a]')} />
+                      <div className={cn('px-6', 'sm:px-10', 'py-6', 'sm:py-8', 'mb-4', 'text-center', 'space-y-10')}>
                         {
-                          <p className="text-sm sm:text-base font-medium text-[#c0395b] italic">
+                          <p className={cn('text-sm', 'sm:text-base', 'font-medium', 'text-[#c0395b]', 'italic')}>
                             Looking For
                           </p>
                         }
@@ -2031,117 +2043,117 @@ export const PublicMatrimonyProfile: React.FC<PublicMatrimonyProfileProps> = ({
                       </div>
                     </div>
                   </section>
-                  <div className="space-y-5 text-sm mt-4 text-slate-700">
-                    <div className="grid gap-3 sm:grid-cols-2">
+                  <div className={cn('space-y-5', 'text-sm', 'mt-4', 'text-slate-700')}>
+                    <div className={cn('grid', 'gap-3', 'sm:grid-cols-2')}>
                       <InfoTile
                         label="Height"
                         value={partnerBasic.heightRange}
-                        icon={<Ruler className="h-4 w-4" />}
+                        icon={<Ruler className={cn('h-4', 'w-4')} />}
                       />
                       <InfoTile
                         label="Age"
                         value={partnerBasic.ageRange}
-                        icon={<Calendar className="h-4 w-4" />}
+                        icon={<Calendar className={cn('h-4', 'w-4')} />}
                       />
                       <InfoTile
                         label="Marital status"
                         value={partnerBasic.maritalStatus}
-                        icon={<HeartHandshake className="h-4 w-4" />}
+                        icon={<HeartHandshake className={cn('h-4', 'w-4')} />}
                       />
                       <InfoTile
                         label="Kundli & astro"
                         value={partnerBasic.kundliAstro}
-                        icon={<Star className="h-4 w-4" />}
+                        icon={<Star className={cn('h-4', 'w-4')} />}
                       />
                       <InfoTile
                         label="Caste"
                         value={partnerBasic.caste}
-                        icon={<Sparkles className="h-4 w-4" />}
+                        icon={<Sparkles className={cn('h-4', 'w-4')} />}
                       />
                       <InfoTile
                         label="Disability"
                         value={partnerBasic.disability}
-                        icon={<UserX className="h-4 w-4" />}
+                        icon={<UserX className={cn('h-4', 'w-4')} />}
                       />
                       <InfoTile
                         label="Religion"
                         value={partnerBasic.religion}
-                        icon={<Feather className="h-4 w-4" />}
+                        icon={<Feather className={cn('h-4', 'w-4')} />}
                       />
                       <InfoTile
                         label="Mother tongue"
                         value={partnerBasic.motherTongue}
-                        icon={<Languages className="h-4 w-4" />}
+                        icon={<Languages className={cn('h-4', 'w-4')} />}
                       />
                       <InfoTile
                         label="Preferred district"
                         value={partnerBasic.district}
-                        icon={<MapPin className="h-4 w-4" />}
+                        icon={<MapPin className={cn('h-4', 'w-4')} />}
                       />
                       <InfoTile
                         label="Preferred state"
                         value={partnerBasic.state}
-                        icon={<MapPin className="h-4 w-4" />}
+                        icon={<MapPin className={cn('h-4', 'w-4')} />}
                       />
                       <InfoTile
                         label="Country"
                         value={partnerBasic.country}
-                        icon={<Globe className="h-4 w-4" />}
+                        icon={<Globe className={cn('h-4', 'w-4')} />}
                       />
                     </div>
 
                     <div>
-                      <div className="flex items-center gap-2 mb-3 rounded-lg bg-[#ffeef3] px-4 py-3">
-                        <div className="h-7 w-7 rounded-full bg-rose-100 flex items-center justify-center">
-                          <School className="w-3.5 h-3.5 text-rose-600" />
+                      <div className={cn('flex', 'items-center', 'gap-2', 'mb-3', 'rounded-lg', 'bg-[#ffeef3]', 'px-4', 'py-3')}>
+                        <div className={cn('h-7', 'w-7', 'rounded-full', 'bg-rose-100', 'flex', 'items-center', 'justify-center')}>
+                          <School className={cn('w-3.5', 'h-3.5', 'text-rose-600')} />
                         </div>
-                        <p className="text-sm font-semibold text-rose-900">
+                        <p className={cn('text-sm', 'font-semibold', 'text-rose-900')}>
                           Education & Career
                         </p>
                       </div>
-                      <div className="grid gap-3 sm:grid-cols-3">
+                      <div className={cn('grid', 'gap-3', 'sm:grid-cols-3')}>
                         <InfoTile
                           label="Education level"
                           value={partnerEdu.level}
-                          icon={<GraduationCap className="h-4 w-4" />}
+                          icon={<GraduationCap className={cn('h-4', 'w-4')} />}
                         />
                         <InfoTile
                           label="Profession"
                           value={partnerEdu.profession}
-                          icon={<Briefcase className="h-4 w-4" />}
+                          icon={<Briefcase className={cn('h-4', 'w-4')} />}
                         />
                         <InfoTile
                           label="Earning"
                           value={partnerEdu.earning}
-                          icon={<IndianRupee className="h-4 w-4" />}
+                          icon={<IndianRupee className={cn('h-4', 'w-4')} />}
                         />
                       </div>
                     </div>
 
                     <div>
-                      <div className="flex items-center gap-2 mb-3 rounded-lg bg-[#ffeef3] px-4 py-3">
-                        <div className="h-7 w-7 rounded-full bg-rose-100 flex items-center justify-center">
-                          <Coffee className="w-3.5 h-3.5 text-rose-600" />
+                      <div className={cn('flex', 'items-center', 'gap-2', 'mb-3', 'rounded-lg', 'bg-[#ffeef3]', 'px-4', 'py-3')}>
+                        <div className={cn('h-7', 'w-7', 'rounded-full', 'bg-rose-100', 'flex', 'items-center', 'justify-center')}>
+                          <Coffee className={cn('w-3.5', 'h-3.5', 'text-rose-600')} />
                         </div>
-                        <p className="text-sm font-semibold text-rose-900">
+                        <p className={cn('text-sm', 'font-semibold', 'text-rose-900')}>
                           Lifestyle
                         </p>
                       </div>
-                      <div className="grid gap-3 sm:grid-cols-3">
+                      <div className={cn('grid', 'gap-3', 'sm:grid-cols-3')}>
                         <InfoTile
                           label="Diet"
                           value={partnerLife.diet}
-                          icon={<Utensils className="h-4 w-4" />}
+                          icon={<Utensils className={cn('h-4', 'w-4')} />}
                         />
                         <InfoTile
                           label="Smoking"
                           value={partnerLife.smoke}
-                          icon={<CigaretteOff className="h-4 w-4" />}
+                          icon={<CigaretteOff className={cn('h-4', 'w-4')} />}
                         />
                         <InfoTile
                           label="Drinking"
                           value={partnerLife.drink}
-                          icon={<GlassWater className="h-4 w-4" />}
+                          icon={<GlassWater className={cn('h-4', 'w-4')} />}
                         />
                       </div>
                     </div>
@@ -2152,56 +2164,56 @@ export const PublicMatrimonyProfile: React.FC<PublicMatrimonyProfileProps> = ({
               {/* Address details */}
               <section
                 id="section-address"
-                className="rounded-lg bg-white px-5 py-5 sm:px-6 sm:py-6 shadow-sm border border-rose-100"
+                className={cn('rounded-lg', 'bg-white', 'px-5', 'py-5', 'sm:px-6', 'sm:py-6', 'shadow-sm', 'border', 'border-rose-100')}
               >
-                <div className="flex items-center gap-2 mb-4 -mx-5 -mt-6 -ml-6 -mr-6 px-5 py-3 rounded-lg bg-[#ffeef3] border-b border-rose-100">
-                  <div className="h-7 w-7 rounded-full bg-rose-100 flex items-center justify-center">
-                    <MapPinned className="w-3.5 h-3.5 text-rose-600" />
+                <div className={cn('flex', 'items-center', 'gap-2', 'mb-4', '-mx-5', '-mt-6', '-ml-6', '-mr-6', 'px-5', 'py-3', 'rounded-lg', 'bg-[#ffeef3]', 'border-b', 'border-rose-100')}>
+                  <div className={cn('h-7', 'w-7', 'rounded-full', 'bg-rose-100', 'flex', 'items-center', 'justify-center')}>
+                    <MapPinned className={cn('w-3.5', 'h-3.5', 'text-rose-600')} />
                   </div>
-                  <p className="text-sm font-semibold text-rose-900">
+                  <p className={cn('text-sm', 'font-semibold', 'text-rose-900')}>
                     Address Details
                   </p>
                 </div>
-                <div className="grid gap-3 sm:grid-cols-2">
+                <div className={cn('grid', 'gap-3', 'sm:grid-cols-2')}>
                   {/* <InfoTile
                   label="Location"
                   value={basic.location as string}
-                  icon={<MapPin className="h-4 w-4" />}
+                  icon={<MapPin className={cn('h-4', 'w-4')} />}
                 /> */}
                   <InfoTile
                     label="Flat No. / Building"
                     value={(basic as any).residingFlatBuilding as string}
-                    icon={<Building2 className="h-4 w-4" />}
+                    icon={<Building2 className={cn('h-4', 'w-4')} />}
                   />
                   <InfoTile
                     label="City"
                     value={(basic as any).residingCity as string}
-                    icon={<MapPin className="h-4 w-4" />}
+                    icon={<MapPin className={cn('h-4', 'w-4')} />}
                   />
                   <InfoTile
                     label="District"
                     value={(basic as any).residingDistrict as string}
-                    icon={<Map className="h-4 w-4" />}
+                    icon={<Map className={cn('h-4', 'w-4')} />}
                   />
                   <InfoTile
                     label="State"
                     value={basic.residingState as string}
-                    icon={<MapPin className="h-4 w-4" />}
+                    icon={<MapPin className={cn('h-4', 'w-4')} />}
                   />
                   <InfoTile
                     label="Pin code"
                     value={(basic as any).residingPincode as string}
-                    icon={<Hash className="h-4 w-4" />}
+                    icon={<Hash className={cn('h-4', 'w-4')} />}
                   />
                   <InfoTile
                     label="Country"
                     value={basic.residingCountry as string}
-                    icon={<Globe className="h-4 w-4" />}
+                    icon={<Globe className={cn('h-4', 'w-4')} />}
                   />
                   <InfoTile
                     label="Nationality"
                     value={basic.citizenship as string}
-                    icon={<Globe className="h-4 w-4" />}
+                    icon={<Globe className={cn('h-4', 'w-4')} />}
                   />
                 </div>
               </section>
@@ -2211,31 +2223,31 @@ export const PublicMatrimonyProfile: React.FC<PublicMatrimonyProfileProps> = ({
               {isFeedView && (
                 <section
                   id="section-contact-identity"
-                  className="rounded-lg bg-white px-5 py-5 sm:px-6 sm:py-6 shadow-sm border border-rose-100"
+                  className={cn('rounded-lg', 'bg-white', 'px-5', 'py-5', 'sm:px-6', 'sm:py-6', 'shadow-sm', 'border', 'border-rose-100')}
                 >
-                  <div className="flex items-center gap-2 mb-4 -mx-5 -mt-6 -ml-6 -mr-6 px-5 py-3 rounded-lg bg-[#ffeef3] border-b border-rose-100">
-                    <div className="h-7 w-7 rounded-full bg-rose-100 flex items-center justify-center">
-                      <Home className="w-3.5 h-3.5 text-rose-600" />
+                  <div className={cn('flex', 'items-center', 'gap-2', 'mb-4', '-mx-5', '-mt-6', '-ml-6', '-mr-6', 'px-5', 'py-3', 'rounded-lg', 'bg-[#ffeef3]', 'border-b', 'border-rose-100')}>
+                    <div className={cn('h-7', 'w-7', 'rounded-full', 'bg-rose-100', 'flex', 'items-center', 'justify-center')}>
+                      <Home className={cn('w-3.5', 'h-3.5', 'text-rose-600')} />
                     </div>
-                    <p className="text-sm font-semibold text-rose-900">
+                    <p className={cn('text-sm', 'font-semibold', 'text-rose-900')}>
                       Contact &amp; Identity
                     </p>
                   </div>
-                  <div className="grid gap-3 text-xs text-rose-900 sm:grid-cols-2">
+                  <div className={cn('grid', 'gap-3', 'text-xs', 'text-rose-900', 'sm:grid-cols-2')}>
                     <InfoTile
                       label="Email"
                       value={contact.email as string}
-                      icon={<Mail className="w-3 h-3 text-rose-500" />}
+                      icon={<Mail className={cn('w-3', 'h-3', 'text-rose-500')} />}
                     />
                     <InfoTile
                       label="Phone"
                       value={contact.phone as string}
-                      icon={<Phone className="w-3 h-3 text-rose-500" />}
+                      icon={<Phone className={cn('w-3', 'h-3', 'text-rose-500')} />}
                     />
                     <InfoTile
                       label="Alternate phone"
                       value={(contact as any).alternatePhone as string}
-                      icon={<Phone className="w-3 h-3 text-rose-500" />}
+                      icon={<Phone className={cn('w-3', 'h-3', 'text-rose-500')} />}
                     />
                     <InfoTile
                       label="Aadhaar status"
@@ -2246,7 +2258,7 @@ export const PublicMatrimonyProfile: React.FC<PublicMatrimonyProfileProps> = ({
                           ? "Verified"
                           : "Not verified"
                       }
-                      icon={<Fingerprint className="w-3 h-3 text-rose-500" />}
+                      icon={<Fingerprint className={cn('w-3', 'h-3', 'text-rose-500')} />}
                     />
                   </div>
                 </section>
@@ -2256,98 +2268,98 @@ export const PublicMatrimonyProfile: React.FC<PublicMatrimonyProfileProps> = ({
               {showFamilySection && (
                 <section
                   id="section-family"
-                  className="rounded-lg bg-white px-5 py-5 sm:px-6 sm:py-6 shadow-sm border border-rose-100"
+                  className={cn('rounded-lg', 'bg-white', 'px-5', 'py-5', 'sm:px-6', 'sm:py-6', 'shadow-sm', 'border', 'border-rose-100')}
                 >
-                  <div className="flex items-center gap-2 mb-4 -mx-5 -mt-6 -ml-6 -mr-6 px-5 py-3 rounded-lg bg-[#ffeef3] border-b border-rose-100">
-                    <div className="h-7 w-7 rounded-full bg-rose-100 flex items-center justify-center">
-                      <Home className="w-3.5 h-3.5 text-rose-600" />
+                  <div className={cn('flex', 'items-center', 'gap-2', 'mb-4', '-mx-5', '-mt-6', '-ml-6', '-mr-6', 'px-5', 'py-3', 'rounded-lg', 'bg-[#ffeef3]', 'border-b', 'border-rose-100')}>
+                    <div className={cn('h-7', 'w-7', 'rounded-full', 'bg-rose-100', 'flex', 'items-center', 'justify-center')}>
+                      <Home className={cn('w-3.5', 'h-3.5', 'text-rose-600')} />
                     </div>
-                    <p className="text-sm font-semibold text-rose-900">
+                    <p className={cn('text-sm', 'font-semibold', 'text-rose-900')}>
                       Family Information
                     </p>
                   </div>
-                  <div className="grid gap-3 sm:grid-cols-2">
+                  <div className={cn('grid', 'gap-3', 'sm:grid-cols-2')}>
                     {hasValue((family as any).fatherName) && (
                       <InfoTile
                         label="Father's Name"
                         value={(family as any).fatherName as string}
-                        icon={<User2 className="h-4 w-4" />}
+                        icon={<User2 className={cn('h-4', 'w-4')} />}
                       />
                     )}
                     {hasValue((family as any).fatherOccupation) && (
                       <InfoTile
                         label="Father's Occupation"
                         value={(family as any).fatherOccupation as string}
-                        icon={<Briefcase className="h-4 w-4" />}
+                        icon={<Briefcase className={cn('h-4', 'w-4')} />}
                       />
                     )}
                     {hasValue((family as any).fatherBelongsFrom) && (
                       <InfoTile
                         label="Father belongs from (native)"
                         value={(family as any).fatherBelongsFrom as string}
-                        icon={<MapPin className="h-4 w-4" />}
+                        icon={<MapPin className={cn('h-4', 'w-4')} />}
                       />
                     )}
                     {hasValue((family as any).motherName) && (
                       <InfoTile
                         label="Mother's Name"
                         value={(family as any).motherName as string}
-                        icon={<User2 className="h-4 w-4" />}
+                        icon={<User2 className={cn('h-4', 'w-4')} />}
                       />
                     )}
                     {hasValue((family as any).motherOccupation) && (
                       <InfoTile
                         label="Mother's occupation"
                         value={(family as any).motherOccupation as string}
-                        icon={<Briefcase className="h-4 w-4" />}
+                        icon={<Briefcase className={cn('h-4', 'w-4')} />}
                       />
                     )}
                     {hasValue((family as any).motherBelongsFrom) && (
                       <InfoTile
                         label="Mother belongs from (native)"
                         value={(family as any).motherBelongsFrom as string}
-                        icon={<MapPin className="h-4 w-4" />}
+                        icon={<MapPin className={cn('h-4', 'w-4')} />}
                       />
                     )}
                     {hasValue(family.familyBackground) && (
                       <InfoTile
                         label="Family background"
                         value={family.familyBackground as string}
-                        icon={<Users className="h-4 w-4" />}
+                        icon={<Users className={cn('h-4', 'w-4')} />}
                       />
                     )}
                     {hasValue((family as any).familyValues) && (
                       <InfoTile
                         label="Family values"
                         value={(family as any).familyValues as string}
-                        icon={<Sparkles className="h-4 w-4" />}
+                        icon={<Sparkles className={cn('h-4', 'w-4')} />}
                       />
                     )}
                     {hasValue(basic.familyType) && (
                       <InfoTile
                         label="Family type"
                         value={basic.familyType}
-                        icon={<Users className="h-4 w-4" />}
+                        icon={<Users className={cn('h-4', 'w-4')} />}
                       />
                     )}
                   </div>
                   {siblingDisplays.length > 0 && (
                     <div className="mt-5">
-                      <div className="flex items-center gap-2 mb-3 rounded-lg bg-[#ffeef3] px-4 py-3">
-                        <div className="h-7 w-7 rounded-full bg-rose-100 flex items-center justify-center">
-                          <Users className="w-3.5 h-3.5 text-rose-600" />
+                      <div className={cn('flex', 'items-center', 'gap-2', 'mb-3', 'rounded-lg', 'bg-[#ffeef3]', 'px-4', 'py-3')}>
+                        <div className={cn('h-7', 'w-7', 'rounded-full', 'bg-rose-100', 'flex', 'items-center', 'justify-center')}>
+                          <Users className={cn('w-3.5', 'h-3.5', 'text-rose-600')} />
                         </div>
-                        <p className="text-sm font-semibold text-rose-900">
+                        <p className={cn('text-sm', 'font-semibold', 'text-rose-900')}>
                           Siblings
                         </p>
                       </div>
-                      <div className="grid gap-3 sm:grid-cols-2">
+                      <div className={cn('grid', 'gap-3', 'sm:grid-cols-2')}>
                         {siblingDisplays.map((sibling, index) => (
                           <InfoTile
                             key={`${sibling.label}-${index}`}
                             label={sibling.label}
                             value={sibling.value}
-                            icon={<User2 className="h-4 w-4" />}
+                            icon={<User2 className={cn('h-4', 'w-4')} />}
                           />
                         ))}
                       </div>
@@ -2359,18 +2371,18 @@ export const PublicMatrimonyProfile: React.FC<PublicMatrimonyProfileProps> = ({
               {/* Kundli & Astro */}
               <section
                 id="section-kundli-astro"
-                className="mt-6 rounded-lg bg-white px-5 py-5 sm:px-6 sm:py-6 shadow-sm border border-rose-100"
+                className={cn('mt-6', 'rounded-lg', 'bg-white', 'px-5', 'py-5', 'sm:px-6', 'sm:py-6', 'shadow-sm', 'border', 'border-rose-100')}
               >
-                <div className="flex items-center gap-2 mb-4 -mx-5 -mt-6 -ml-6 -mr-6 px-5 py-3 rounded-lg bg-[#ffeef3] border-b border-rose-100">
-                  <div className="h-7 w-7 rounded-full bg-rose-100 flex items-center justify-center">
-                    <Star className="w-3.5 h-3.5 text-rose-600" />
+                <div className={cn('flex', 'items-center', 'gap-2', 'mb-4', '-mx-5', '-mt-6', '-ml-6', '-mr-6', 'px-5', 'py-3', 'rounded-lg', 'bg-[#ffeef3]', 'border-b', 'border-rose-100')}>
+                  <div className={cn('h-7', 'w-7', 'rounded-full', 'bg-rose-100', 'flex', 'items-center', 'justify-center')}>
+                    <Star className={cn('w-3.5', 'h-3.5', 'text-rose-600')} />
                   </div>
-                  <p className="text-sm font-semibold text-rose-900">
+                  <p className={cn('text-sm', 'font-semibold', 'text-rose-900')}>
                     Kundli & Astro
                   </p>
                 </div>
 
-                <div className="grid gap-3 text-xs text-gray-700 sm:grid-cols-2">
+                <div className={cn('grid', 'gap-3', 'text-xs', 'text-gray-700', 'sm:grid-cols-2')}>
                   <InfoTile
                     label="Birth date"
                     value={
@@ -2378,51 +2390,51 @@ export const PublicMatrimonyProfile: React.FC<PublicMatrimonyProfileProps> = ({
                         (kundli as any)?.birthDate || (basic as any)?.birthDate,
                       ) as string
                     }
-                    icon={<Calendar className="h-4 w-4" />}
+                    icon={<Calendar className={cn('h-4', 'w-4')} />}
                   />
                   <InfoTile
                     label="Birth time"
                     value={(kundli as any)?.birthTime as string}
-                    icon={<Timer className="h-4 w-4" />}
+                    icon={<Timer className={cn('h-4', 'w-4')} />}
                   />
                   <InfoTile
                     label="Gotra"
                     value={basic.gothra as string}
-                    icon={<Sparkles className="h-4 w-4" />}
+                    icon={<Sparkles className={cn('h-4', 'w-4')} />}
                   />
                   <InfoTile
                     label="Nakshatra"
                     value={(kundli as any)?.nakshatra as string}
-                    icon={<Sun className="h-4 w-4" />}
+                    icon={<Sun className={cn('h-4', 'w-4')} />}
                   />
                   <InfoTile
                     label="Raashi"
                     value={(kundli as any)?.raashi as string}
-                    icon={<Target className="h-4 w-4" />}
+                    icon={<Target className={cn('h-4', 'w-4')} />}
                   />
                   <InfoTile
                     label="Manglik"
                     value={(kundli as any)?.manglikStatus as string}
-                    icon={<Link className="h-4 w-4" />}
+                    icon={<Link className={cn('h-4', 'w-4')} />}
                   />
                   <InfoTile
                     label="Astrology system"
                     value={(kundli as any)?.astrologySystem as string}
-                    icon={<Orbit className="h-4 w-4" />}
+                    icon={<Orbit className={cn('h-4', 'w-4')} />}
                   />
                   <InfoTile
                     label="Horoscope preference"
                     value={(kundli as any)?.horoscopePreference as string}
-                    icon={<Timer className="h-4 w-4" />}
+                    icon={<Timer className={cn('h-4', 'w-4')} />}
                   />
                   <InfoTile
                     label="Dosha details"
                     value={(kundli as any)?.doshaDetails as string}
-                    icon={<AlertTriangle className="h-4 w-4" />}
+                    icon={<AlertTriangle className={cn('h-4', 'w-4')} />}
                   />
                 </div>
 
-                <div className="grid gap-3 mt-3 text-xs text-gray-700 sm:grid-cols-1">
+                <div className={cn('grid', 'gap-3', 'mt-3', 'text-xs', 'text-gray-700', 'sm:grid-cols-1')}>
                   <InfoTile
                     label="Place of birth"
                     value={(() => {
@@ -2457,7 +2469,7 @@ export const PublicMatrimonyProfile: React.FC<PublicMatrimonyProfileProps> = ({
                       }
                       return deduped.join(", ");
                     })()}
-                    icon={<MapPin className="h-4 w-4" />}
+                    icon={<MapPin className={cn('h-4', 'w-4')} />}
                   />
                 </div>
               </section>
@@ -2467,33 +2479,33 @@ export const PublicMatrimonyProfile: React.FC<PublicMatrimonyProfileProps> = ({
               {showAdditionalNotesSection && (
                 <section
                   id="section-additionalNote"
-                  className="mt-8 flex justify-center px-4 sm:px-6 lg:px-0"
+                  className={cn('mt-8', 'flex', 'justify-center', 'px-4', 'sm:px-6', 'lg:px-0')}
                 >
-                  <div className="w-full max-w-5xl rounded-xl bg-white shadow-[0_18px_45px_rgba(0,0,0,0.06)] border border-[#f4d6df] overflow-hidden ">
-                    <div className="h-[3px]  bg-gradient-to-r from-[#f37488] via-[#f9a37f] to-[#f6c88a]" />
-                    <div className="px-6  sm:px-10 py-6 sm:py-8 text-center space-y-10">
+                  <div className={cn('w-full', 'max-w-5xl', 'rounded-xl', 'bg-white', 'shadow-[0_18px_45px_rgba(0,0,0,0.06)]', 'border', 'border-[#f4d6df]', 'overflow-hidden')}>
+                    <div className={cn('h-[3px]', 'bg-gradient-to-r', 'from-[#f37488]', 'via-[#f9a37f]', 'to-[#f6c88a]')} />
+                    <div className={cn('px-6', 'sm:px-10', 'py-6', 'sm:py-8', 'text-center', 'space-y-10')}>
                       {
-                        <p className="text-sm sm:text-base font-medium text-[#c0395b] italic">
+                        <p className={cn('text-sm', 'sm:text-base', 'font-medium', 'text-[#c0395b]', 'italic')}>
                           Additional Notes
                         </p>
                       }
-                      <p className="text-sm leading-relaxed text-[#4b313e] whitespace-pre-line">
+                      <p className={cn('text-sm', 'leading-relaxed', 'text-[#4b313e]', 'whitespace-pre-line')}>
                         {full.additionalNotes}
                       </p>
                       {/* {!commentsLoading && comments.length > 0 && (
-                    <div className="pt-2 border-t border-rose-100 text-left">
-                      <p className="text-[11px] font-semibold tracking-[0.14em] uppercase text-rose-400 mb-2">
+                    <div className={cn('pt-2', 'border-t', 'border-rose-100', 'text-left')}>
+                      <p className={cn('text-[11px]', 'font-semibold', 'tracking-[0.14em]', 'uppercase', 'text-rose-400', 'mb-2')}>
                         Comments from families
                       </p>
-                      <div className="space-y-2 max-h-56 overflow-y-auto pr-1">
+                      <div className={cn('space-y-2', 'max-h-56', 'overflow-y-auto', 'pr-1')}>
                         {comments.map((comment) => (
                           <div
                             key={comment.id}
-                            className="rounded-xl border border-rose-100 bg-rose-50/80 px-3 py-2"
+                            className={cn('rounded-xl', 'border', 'border-rose-100', 'bg-rose-50/80', 'px-3', 'py-2')}
                           >
-                            <div className="flex items-center justify-between gap-2">
-                              <div className="flex items-center gap-1.5 min-w-0">
-                                <MessageCircle className="h-3 w-3 text-rose-500 shrink-0" />
+                            <div className={cn('flex', 'items-center', 'justify-between', 'gap-2')}>
+                              <div className={cn('flex', 'items-center', 'gap-1.5', 'min-w-0')}>
+                                <MessageCircle className={cn('h-3', 'w-3', 'text-rose-500', 'shrink-0')} />
                                 {comment.actorProfileId ? (
                                   <button
                                     type="button"
@@ -2501,18 +2513,18 @@ export const PublicMatrimonyProfile: React.FC<PublicMatrimonyProfileProps> = ({
                                       if (typeof window === "undefined") return;
                                       window.location.href = `/feed/profile/${comment.actorProfileId}`;
                                     }}
-                                    className="text-[11px] font-semibold text-rose-800 truncate hover:underline text-left"
+                                    className={cn('text-[11px]', 'font-semibold', 'text-rose-800', 'truncate', 'hover:underline', 'text-left')}
                                   >
                                     {comment.actorDisplayName || "Member"}
                                   </button>
                                 ) : (
-                                  <p className="text-[11px] font-semibold text-rose-800 truncate">
+                                  <p className={cn('text-[11px]', 'font-semibold', 'text-rose-800', 'truncate')}>
                                     {comment.actorDisplayName || "Member"}
                                   </p>
                                 )}
                               </div>
                               {comment.createdAt && (
-                                <p className="text-[10px] text-rose-400 shrink-0">
+                                <p className={cn('text-[10px]', 'text-rose-400', 'shrink-0')}>
                                   {new Date(
                                     comment.createdAt
                                   ).toLocaleDateString(undefined, {
@@ -2523,7 +2535,7 @@ export const PublicMatrimonyProfile: React.FC<PublicMatrimonyProfileProps> = ({
                               )}
                             </div>
                             {comment.text && (
-                              <p className="mt-1 text-[11px] text-rose-700 whitespace-pre-line">
+                              <p className={cn('mt-1', 'text-[11px]', 'text-rose-700', 'whitespace-pre-line')}>
                                 {comment.text}
                               </p>
                             )}
@@ -2533,12 +2545,12 @@ export const PublicMatrimonyProfile: React.FC<PublicMatrimonyProfileProps> = ({
                     </div>
                   )}
                   {commentsLoading && (
-                    <p className="text-[11px] text-rose-300">
+                    <p className={cn('text-[11px]', 'text-rose-300')}>
                       Loading comments…
                     </p>
                   )}
                   {!commentsLoading && commentsError && (
-                    <p className="text-[11px] text-rose-400">
+                    <p className={cn('text-[11px]', 'text-rose-400')}>
                       {commentsError || "Couldn't load comments."}
                     </p>
                   )} */}
@@ -2550,48 +2562,48 @@ export const PublicMatrimonyProfile: React.FC<PublicMatrimonyProfileProps> = ({
 
             {/* Right column: gallery + contact (sticky on larger screens) */}
             <div
-              className="space-y-6 lg:sticky lg:top-28 self-start"
+              className={cn('space-y-6', 'lg:sticky', 'lg:top-28', 'self-start')}
               id="section-contact"
             >
               <section
                 id="section-gallery"
-                className="rounded-lg bg-white px-5 py-5 sm:px-6 sm:py-6 shadow-sm border border-rose-100"
+                className={cn('rounded-lg', 'bg-white', 'px-5', 'py-5', 'sm:px-6', 'sm:py-6', 'shadow-sm', 'border', 'border-rose-100')}
               >
-                <div className="flex items-center gap-2 mb-3 -mx-5 -mt-6 -ml-6 -mr-6 px-5 py-3 rounded-lg bg-[#ffeef3] border-b border-rose-100">
-                  <div className="h-7 w-7 rounded-lg bg-rose-100 flex items-center justify-center">
-                    <Camera className="w-3.5 h-3.5 text-rose-600" />
+                <div className={cn('flex', 'items-center', 'gap-2', 'mb-3', '-mx-5', '-mt-6', '-ml-6', '-mr-6', 'px-5', 'py-3', 'rounded-lg', 'bg-[#ffeef3]', 'border-b', 'border-rose-100')}>
+                  <div className={cn('h-7', 'w-7', 'rounded-lg', 'bg-rose-100', 'flex', 'items-center', 'justify-center')}>
+                    <Camera className={cn('w-3.5', 'h-3.5', 'text-rose-600')} />
                   </div>
-                  <p className="text-sm font-semibold text-rose-900">
+                  <p className={cn('text-sm', 'font-semibold', 'text-rose-900')}>
                     Photo Gallery
                   </p>
                 </div>
                 {photos.length > 0 ? (
-                  <div className="mt-3 grid gap-3 grid-cols-2">
+                  <div className={cn('mt-3', 'grid', 'gap-3', 'grid-cols-2')}>
                     {photos.slice(0, 4).map((photo, index) => (
                       <button
                         key={photo.id}
                         type="button"
                         onClick={() => openPhotoAtIndex(index)}
-                        className="overflow-hidden aspect-square rounded-lg border border-rose-100 relative focus:outline-none"
+                        className={cn('overflow-hidden', 'aspect-square', 'rounded-lg', 'border', 'border-rose-100', 'relative', 'focus:outline-none')}
                       >
                         <img
                           src={photo.url}
                           alt={photo.caption || "Gallery photo"}
-                          className="h-full w-full "
+                          className={cn('h-full', 'w-full')}
                         />
                       </button>
                     ))}
                   </div>
                 ) : (
-                  <p className="text-sm text-slate-500">
+                  <p className={cn('text-sm', 'text-slate-500')}>
                     Photos will appear here once shared.
                   </p>
                 )}
               </section>
 
-              <section className="rounded-lg bg-rose-600 px-5 py-6 sm:px-6 sm:py-7 shadow-sm text-white">
-                <p className="text-sm font-semibold">Interested?</p>
-                <p className="mt-1 text-xs text-rose-100">
+              <section className={cn('rounded-lg', 'bg-rose-600', 'px-5', 'py-6', 'sm:px-6', 'sm:py-7', 'shadow-sm', 'text-white')}>
+                <p className={cn('text-sm', 'font-semibold')}>Interested?</p>
+                <p className={cn('mt-1', 'text-xs', 'text-rose-100')}>
                   Connect with the family directly to take the conversation
                   forward.
                   {!isFeedView && (
@@ -2604,7 +2616,7 @@ export const PublicMatrimonyProfile: React.FC<PublicMatrimonyProfileProps> = ({
                         href="https://matrimony.qrfolio.net"
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="text-blue-950 hover:underline font-medium"
+                        className={cn('text-blue-950', 'hover:underline', 'font-medium')}
                       >
                         https://matrimony.qrfolio.net
                       </a>
@@ -2613,22 +2625,22 @@ export const PublicMatrimonyProfile: React.FC<PublicMatrimonyProfileProps> = ({
                 </p>
 
                 {isFeedView && (
-                  <div className="mt-4 space-y-3 text-xs">
+                  <div className={cn('mt-4', 'space-y-3', 'text-xs')}>
                     {emailAddress && (
                       <a
                         href={emailHref}
-                        className="flex items-center gap-2 rounded-2xl bg-white/10 px-3 py-2 hover:bg-white/15"
+                        className={cn('flex', 'items-center', 'gap-2', 'rounded-2xl', 'bg-white/10', 'px-3', 'py-2', 'hover:bg-white/15')}
                       >
-                        <Mail className="h-3.5 w-3.5" />
+                        <Mail className={cn('h-3.5', 'w-3.5')} />
                         <span className="truncate">{emailAddress}</span>
                       </a>
                     )}
                     {primaryPhone && (
                       <a
                         href={phoneHref}
-                        className="flex items-center gap-2 rounded-2xl bg-white/10 px-3 py-2 hover:bg-white/15"
+                        className={cn('flex', 'items-center', 'gap-2', 'rounded-2xl', 'bg-white/10', 'px-3', 'py-2', 'hover:bg-white/15')}
                       >
-                        <Phone className="h-3.5 w-3.5" />
+                        <Phone className={cn('h-3.5', 'w-3.5')} />
                         <span>{primaryPhone}</span>
                       </a>
                     )}
@@ -2639,7 +2651,7 @@ export const PublicMatrimonyProfile: React.FC<PublicMatrimonyProfileProps> = ({
           </section>
         )}
 
-        <footer className="mt-12 max-w-4xl mx-auto px-4 sm:px-6 lg:px-0 text-center text-[11px] text-rose-400">
+        <footer className={cn('mt-12', 'max-w-4xl', 'mx-auto', 'px-4', 'sm:px-6', 'lg:px-0', 'text-center', 'text-[11px]', 'text-rose-400')}>
           <p> 2025 MatrimonyOne. All rights reserved.</p>
           <p className="mt-1">Privacy Policy • Terms of Service</p>
         </footer>
@@ -2648,17 +2660,17 @@ export const PublicMatrimonyProfile: React.FC<PublicMatrimonyProfileProps> = ({
       {/* Photo lightbox */}
       {activePhoto && (
         <div
-          className="fixed inset-0 z-40 flex items-center justify-center bg-black/90 backdrop-blur-sm px-4"
+          className={cn('fixed', 'inset-0', 'z-40', 'flex', 'items-center', 'justify-center', 'bg-black/90', 'backdrop-blur-sm', 'px-4')}
           onClick={() => setActivePhotoIndex(null)}
         >
           <div
-            className="relative max-w-3xl w-full"
+            className={cn('relative', 'max-w-3xl', 'w-full')}
             onClick={(event) => event.stopPropagation()}
           >
             <button
               type="button"
               onClick={() => setActivePhotoIndex(null)}
-              className="absolute -top-10 right-2 h-7 w-7 rounded-lg bg-white/90 text-slate-800 text-sm font-semibold shadow flex items-center justify-center"
+              className={cn('absolute', '-top-10', 'right-2', 'h-7', 'w-7', 'rounded-lg', 'bg-white/90', 'text-slate-800', 'text-sm', 'font-semibold', 'shadow', 'flex', 'items-center', 'justify-center')}
             >
               ×
             </button>
@@ -2670,9 +2682,9 @@ export const PublicMatrimonyProfile: React.FC<PublicMatrimonyProfileProps> = ({
                     event.stopPropagation();
                     handlePrevPhoto();
                   }}
-                  className="absolute left-4 sm:left-8 top-1/2 -translate-y-1/2 h-8 w-8 rounded-lg bg-white/90 text-slate-800 shadow flex items-center justify-center"
+                  className={cn('absolute', 'left-4', 'sm:left-8', 'top-1/2', '-translate-y-1/2', 'h-8', 'w-8', 'rounded-lg', 'bg-white/90', 'text-slate-800', 'shadow', 'flex', 'items-center', 'justify-center')}
                 >
-                  <ChevronLeft className="h-4 w-4" />
+                  <ChevronLeft className={cn('h-4', 'w-4')} />
                 </button>
                 <button
                   type="button"
@@ -2680,21 +2692,21 @@ export const PublicMatrimonyProfile: React.FC<PublicMatrimonyProfileProps> = ({
                     event.stopPropagation();
                     handleNextPhoto();
                   }}
-                  className="absolute right-4 sm:right-8 top-1/2 -translate-y-1/2 h-8 w-8 rounded-lg bg-white/90 text-slate-800 shadow flex items-center justify-center"
+                  className={cn('absolute', 'right-4', 'sm:right-8', 'top-1/2', '-translate-y-1/2', 'h-8', 'w-8', 'rounded-lg', 'bg-white/90', 'text-slate-800', 'shadow', 'flex', 'items-center', 'justify-center')}
                 >
-                  <ChevronRight className="h-4 w-4" />
+                  <ChevronRight className={cn('h-4', 'w-4')} />
                 </button>
               </>
             )}
-            <div className="overflow-hidden rounded-lg">
+            <div className={cn('overflow-hidden', 'rounded-lg')}>
               <img
                 src={activePhoto?.url || ""}
                 alt={activePhoto?.caption || "Gallery photo"}
-                className="max-h-[80vh] w-full object-contain"
+                className={cn('max-h-[80vh]', 'w-full', 'object-contain')}
               />
             </div>
             {activePhoto && activePhoto.caption && (
-              <p className="mt-2 text-xs text-slate-200 text-center">
+              <p className={cn('mt-2', 'text-xs', 'text-slate-200', 'text-center')}>
                 {activePhoto.caption}
               </p>
             )}

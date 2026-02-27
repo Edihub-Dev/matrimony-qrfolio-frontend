@@ -1,19 +1,5 @@
 import axios from 'axios';
 
-const getAuthToken = (): string | null => {
-  if (typeof window === 'undefined') return null;
-  return window.localStorage.getItem('qrAuthToken');
-};
-
-const authHeaders = () => {
-  const token = getAuthToken();
-  return token
-    ? {
-        Authorization: `Bearer ${token}`,
-      }
-    : {};
-};
-
 export type AdminUserListItem = {
   _id: string;
   email: string | null;
@@ -82,7 +68,6 @@ export const listUsersForAdmin = async (
 
     const response = await axios.get<AdminUserListResponse>('/api/admin/users', {
       params,
-      headers: authHeaders(),
     });
 
     return {
@@ -105,7 +90,6 @@ export const setUserBlockedForAdmin = async (
       { isBlocked },
       {
         headers: {
-          ...authHeaders(),
           'Content-Type': 'application/json',
         },
       },

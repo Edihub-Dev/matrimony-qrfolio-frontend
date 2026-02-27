@@ -1,19 +1,5 @@
 import axios from 'axios';
 
-const getAuthToken = (): string | null => {
-  if (typeof window === 'undefined') return null;
-  return window.localStorage.getItem('qrAuthToken');
-};
-
-const authHeaders = () => {
-  const token = getAuthToken();
-  return token
-    ? {
-        Authorization: `Bearer ${token}`,
-      }
-    : {};
-};
-
 export type ReportsApiError = {
   ok: false;
   status: number;
@@ -68,7 +54,6 @@ export const blockUser = async (
       { targetUserId },
       {
         headers: {
-          ...authHeaders(),
           'Content-Type': 'application/json',
         },
       },
@@ -90,9 +75,6 @@ export const listBlockedUsers = async (): Promise<
   try {
     const response = await axios.get<BlockedUsersResponse>(
       '/api/reports/blocks',
-      {
-        headers: authHeaders(),
-      },
     );
 
     return {
@@ -114,7 +96,6 @@ export const unblockUser = async (
       {
         data: { targetUserId },
         headers: {
-          ...authHeaders(),
           'Content-Type': 'application/json',
         },
       },
@@ -144,7 +125,6 @@ export const reportProfile = async (
       params,
       {
         headers: {
-          ...authHeaders(),
           'Content-Type': 'application/json',
         },
       },

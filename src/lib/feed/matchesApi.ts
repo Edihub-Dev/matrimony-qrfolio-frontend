@@ -1,19 +1,5 @@
 import axios from 'axios';
 
-const getAuthToken = (): string | null => {
-  if (typeof window === 'undefined') return null;
-  return window.localStorage.getItem('qrAuthToken');
-};
-
-const authHeaders = () => {
-  const token = getAuthToken();
-  return token
-    ? {
-        Authorization: `Bearer ${token}`,
-      }
-    : {};
-};
-
 export type MatchFeedItem = {
   id: string;
   profileId: string;
@@ -108,7 +94,6 @@ export const getMatchesFeed = async (
         page,
         limit,
       },
-      headers: authHeaders(),
     });
 
     return {
@@ -133,7 +118,6 @@ export const getShortlistedProfiles = async (
           page,
           limit,
         },
-        headers: authHeaders(),
       },
     );
 
@@ -159,7 +143,6 @@ export const getViewedProfiles = async (
           page,
           limit,
         },
-        headers: authHeaders(),
       },
     );
 
@@ -185,7 +168,6 @@ export const getLikedProfiles = async (
           page,
           limit,
         },
-        headers: authHeaders(),
       },
     );
 
@@ -228,7 +210,6 @@ export const filterMatches = async (
           limit,
         },
         headers: {
-          ...authHeaders(),
           'Content-Type': 'application/json',
         },
       },
@@ -256,7 +237,6 @@ export const searchUsersWithMatches = async (
         page,
         limit,
       },
-      headers: authHeaders(),
     });
 
     return {
